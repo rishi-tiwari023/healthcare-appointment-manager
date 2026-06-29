@@ -1,0 +1,160 @@
+const bcrypt = require('bcrypt');
+const db = require('../../db');
+
+class DoctorsService {
+  async getAllDoctors() {
+    const result = await db.query(
+      `SELECT d.id, d.user_id, d.first_name, d.last_name, d.specialisation, d.slot_duration_minutes, u.email, u.profile_image_url
+       FROM doctors d
+       JOIN users u ON d.user_id = u.id`
+    );
+    return result.rows;
+  }
+
+  async getDoctorById(id) {
+    const result = await db.query(
+      `SELECT d.id, d.user_id, d.first_name, d.last_name, d.specialisation, d.slot_duration_minutes, u.email, u.profile_image_url
+       FROM doctors d
+       JOIN users u ON d.user_id = u.id
+       WHERE d.id = $1`,
+      [id]
+    );
+    
+    if (result.rowCount === 0) {
+      throw { statusCode: 404, message: 'Doctor not found' };
+    }
+    return result.rows[0];
+  }
+
+  async createDoctor(data) {
+    const { email, password, first_name, last_name, specialisation, slot_duration_minutes } = data;
+
+    const existingUser = await db.query('SELECT id FROM users WHERE email = $1', [email]);
+    if (existingUser.rowCount > 0) {
+      throw { statusCode: 409, message: 'User with this email already exists' };
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    const client = await db.pool.connect();
+    
+    try {
+      await client.query('BEGIN');
+      
+      const userResult = await client.query(
+        'INSERT INTO users (email, password_hash, role) VALUES ($1, $2, $3) RETURNING id, email',
+        [email, passwordHash, 'doctor']
+      );
+      const user = userResult.rows[0];
+
+      const doctorResult = await client.query(
+        'INSERT INTO doctors (user_id, first_name, last_name, specialisation, slot_duration_minutes) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+        [user.id, first_name, last_name, specialisation, slot_duration_minutes]
+      );
+
+      await client.query('COMMIT');
+      return { ...doctorResult.rows[0], email: user.email };
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async updateDoctor(id, data) {
+    const fields = [];
+    const values = [];
+    let idx = 1;
+
+    for (const [key, value] of Object.entries(data)) {
+      if (value !== undefined) {
+        fields.push(`${key} = $${idx}`);
+        values.push(value);
+        idx++;
+      }
+    }
+
+    if (fields.length === 0) {
+      throw { statusCode: 400, message: 'No fields provided for update' };
+    }
+
+    values.push(id);
+    const query = `UPDATE doctors SET ${fields.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = $${idx} RETURNING *`;
+    
+    const result = await db.query(query, values);
+    if (result.rowCount === 0) {
+      throw { statusCode: 404, message: 'Doctor not found' };
+    }
+    return result.rows[0];
+  }
+
+  async deleteDoctor(id) {
+    // Because of ON DELETE CASCADE, deleting the user will delete the doctor profile and everything else
+    const doctorResult = await db.query('SELECT user_id FROM doctors WHERE id = $1', [id]);
+    if (doctorResult.rowCount === 0) {
+      throw { statusCode: 404, message: 'Doctor not found' };
+    }
+
+    const userId = doctorResult.rows[0].user_id;
+    await db.query('DELETE FROM users WHERE id = $1', [userId]);
+  }
+
+  async getAvailability(doctorId) {
+    const result = await db.query(
+      'SELECT day_of_week, start_time, end_time FROM doctor_availability WHERE doctor_id = $1 ORDER BY day_of_week, start_time',
+      [doctorId]
+    );
+    return result.rows;
+  }
+
+  async setAvailability(doctorId, schedules) {
+    const client = await db.pool.connect();
+    try {
+      await client.query('BEGIN');
+      
+      // Delete existing availability
+      await client.query('DELETE FROM doctor_availability WHERE doctor_id = $1', [doctorId]);
+      
+      // Insert new schedules
+      for (const schedule of schedules) {
+        await client.query(
+          'INSERT INTO doctor_availability (doctor_id, day_of_week, start_time, end_time) VALUES ($1, $2, $3, $4)',
+          [doctorId, schedule.day_of_week, schedule.start_time, schedule.end_time]
+        );
+      }
+
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async addLeave(doctorId, date) {
+    try {
+      await db.query(
+        'INSERT INTO doctor_leave (doctor_id, leave_date) VALUES ($1, $2)',
+        [doctorId, date]
+      );
+    } catch (error) {
+      if (error.code === '23505') {
+        throw { statusCode: 409, message: 'Leave already exists for this date' };
+      }
+      throw error;
+    }
+  }
+
+  async removeLeave(doctorId, date) {
+    const result = await db.query(
+      'DELETE FROM doctor_leave WHERE doctor_id = $1 AND leave_date = $2',
+      [doctorId, date]
+    );
+    if (result.rowCount === 0) {
+      throw { statusCode: 404, message: 'Leave not found for this date' };
+    }
+  }
+}
+
+module.exports = new DoctorsService();

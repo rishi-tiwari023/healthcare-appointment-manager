@@ -7,6 +7,7 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 
 const authRoutes = require('./api/auth/auth.routes');
+const doctorsRoutes = require('./api/doctors/doctors.routes');
 const globalErrorHandler = require('./common/middleware/error.middleware');
 
 const app = express();
@@ -31,6 +32,7 @@ app.use('/api', limiter);
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/doctors', doctorsRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
