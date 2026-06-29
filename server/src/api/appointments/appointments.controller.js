@@ -1,0 +1,43 @@
+const appointmentsService = require('./appointments.service');
+const { successResponse } = require('../../common/utils/response');
+
+class AppointmentsController {
+  async getAvailableSlots(req, res, next) {
+    try {
+      const { doctor_id, date } = req.query;
+      const slots = await appointmentsService.getAvailableSlots(doctor_id, date);
+      return successResponse(res, 200, 'Available slots fetched successfully', slots);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async bookAppointment(req, res, next) {
+    try {
+      const appointment = await appointmentsService.bookAppointment(req.user.id, req.body);
+      return successResponse(res, 201, 'Appointment booked successfully', appointment);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getAppointments(req, res, next) {
+    try {
+      const appointments = await appointmentsService.getAppointments(req.user.id, req.user.role);
+      return successResponse(res, 200, 'Appointments fetched successfully', appointments);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async cancelAppointment(req, res, next) {
+    try {
+      const appointment = await appointmentsService.cancelAppointment(req.params.id, req.user.id, req.user.role);
+      return successResponse(res, 200, 'Appointment cancelled successfully', appointment);
+    } catch (error) {
+      next(error);
+    }
+  }
+}
+
+module.exports = new AppointmentsController();
