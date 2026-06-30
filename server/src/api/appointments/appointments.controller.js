@@ -47,6 +47,15 @@ class AppointmentsController {
       next(error);
     }
   }
+
+  async rescheduleAppointment(req, res, next) {
+    try {
+      const appointment = await appointmentsService.rescheduleAppointment(req.params.id, req.user.id, req.user.role, req.body);
+      return successResponse(res, 200, 'Appointment rescheduled successfully', appointment);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = new AppointmentsController();

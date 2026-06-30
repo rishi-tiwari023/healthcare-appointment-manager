@@ -45,4 +45,12 @@ router.put(
   appointmentsController.cancelAppointment
 );
 
+// Reschedule an appointment (Patient, Admin)
+router.put(
+  '/:id/reschedule', 
+  authenticate, 
+  validate(bookAppointmentSchema),
+  appointmentsController.rescheduleAppointment
+);
+
 module.exports = router;

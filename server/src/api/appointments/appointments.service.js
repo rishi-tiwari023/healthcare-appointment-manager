@@ -271,6 +271,80 @@ class AppointmentsService {
     
     return result.rows[0];
   }
+
+  async rescheduleAppointment(appointmentId, userId, role, data) {
+    const { doctor_id, appointment_date, slot_time } = data;
+
+    const appointmentResult = await db.query(
+      `SELECT a.id, p.user_id AS patient_user_id, p.id AS patient_id, d.user_id AS doctor_user_id, a.status 
+       FROM appointments a
+       JOIN patients p ON a.patient_id = p.id
+       JOIN doctors d ON a.doctor_id = d.id
+       WHERE a.id = $1`,
+      [appointmentId]
+    );
+
+    if (appointmentResult.rowCount === 0) {
+      throw { statusCode: 404, message: 'Appointment not found' };
+    }
+
+    const appt = appointmentResult.rows[0];
+
+    if (role !== 'admin' && appt.patient_user_id !== userId && appt.doctor_user_id !== userId) {
+      throw { statusCode: 403, message: 'Forbidden to reschedule this appointment' };
+    }
+
+    if (appt.status === 'cancelled') {
+      throw { statusCode: 400, message: 'Cannot reschedule a cancelled appointment' };
+    }
+
+    const client = await db.pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const holdCheck = await client.query(
+        `SELECT id FROM appointment_holds 
+         WHERE doctor_id = $1 AND appointment_date = $2 AND slot_time = $3 
+         AND patient_id = $4 AND expires_at > CURRENT_TIMESTAMP FOR UPDATE`,
+        [doctor_id, appointment_date, slot_time, appt.patient_id]
+      );
+
+      if (holdCheck.rowCount === 0) {
+        throw { statusCode: 400, message: 'Hold for the new slot has expired or does not exist.' };
+      }
+
+      await client.query(`DELETE FROM appointment_holds WHERE id = $1`, [holdCheck.rows[0].id]);
+
+      const appointmentCheck = await client.query(
+        `SELECT id FROM appointments 
+         WHERE doctor_id = $1 AND appointment_date = $2 AND slot_time = $3 AND status != 'cancelled' FOR UPDATE`,
+        [doctor_id, appointment_date, slot_time]
+      );
+
+      if (appointmentCheck.rowCount > 0) {
+        throw { statusCode: 409, message: 'The new slot is already booked.' };
+      }
+
+      await client.query(
+        `UPDATE appointments SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE id = $1`,
+        [appointmentId]
+      );
+
+      const result = await client.query(
+        `INSERT INTO appointments (patient_id, doctor_id, appointment_date, slot_time, status)
+         VALUES ($1, $2, $3, $4, 'booked') RETURNING *`,
+        [appt.patient_id, doctor_id, appointment_date, slot_time]
+      );
+
+      await client.query('COMMIT');
+      return result.rows[0];
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
 }
 
 module.exports = new AppointmentsService();
