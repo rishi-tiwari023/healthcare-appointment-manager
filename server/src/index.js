@@ -10,6 +10,7 @@ const authRoutes = require('./api/auth/auth.routes');
 const doctorsRoutes = require('./api/doctors/doctors.routes');
 const patientsRoutes = require('./api/patients/patients.routes');
 const appointmentsRoutes = require('./api/appointments/appointments.routes');
+const aiRoutes = require('./api/ai/ai.routes');
 const globalErrorHandler = require('./common/middleware/error.middleware');
 
 const app = express();
@@ -37,6 +38,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/doctors', doctorsRoutes);
 app.use('/api/patients', patientsRoutes);
 app.use('/api/appointments', appointmentsRoutes);
+app.use('/api/appointments/:appointmentId', aiRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
