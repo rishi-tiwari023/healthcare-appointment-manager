@@ -12,6 +12,15 @@ class AppointmentsController {
     }
   }
 
+  async holdSlot(req, res, next) {
+    try {
+      const hold = await appointmentsService.holdSlot(req.user.id, req.body);
+      return successResponse(res, 201, 'Slot held successfully for 5 minutes', hold);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async bookAppointment(req, res, next) {
     try {
       const appointment = await appointmentsService.bookAppointment(req.user.id, req.body);

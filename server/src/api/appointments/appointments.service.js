@@ -69,12 +69,87 @@ class AppointmentsService {
       [doctorId, date]
     );
 
-    const bookedSlots = appointmentsResult.rows.map(r => r.slot_time);
+    // Fetch active holds
+    const holdsResult = await db.query(
+      `SELECT slot_time FROM appointment_holds 
+       WHERE doctor_id = $1 AND appointment_date = $2 AND expires_at > CURRENT_TIMESTAMP`,
+      [doctorId, date]
+    );
 
-    // 5. Filter out booked slots
-    const availableSlots = allGeneratedSlots.filter(slot => !bookedSlots.includes(slot));
+    const bookedSlots = appointmentsResult.rows.map(r => r.slot_time);
+    const heldSlots = holdsResult.rows.map(r => r.slot_time);
+    const unavailableSlots = [...bookedSlots, ...heldSlots];
+
+    // 5. Filter out booked and held slots
+    const availableSlots = allGeneratedSlots.filter(slot => !unavailableSlots.includes(slot));
     
     return availableSlots;
+  }
+
+  async holdSlot(patientUserId, data) {
+    const { doctor_id, appointment_date, slot_time } = data;
+
+    const patientResult = await db.query('SELECT id FROM patients WHERE user_id = $1', [patientUserId]);
+    if (patientResult.rowCount === 0) {
+      throw { statusCode: 404, message: 'Patient profile not found for this user' };
+    }
+    const patient_id = patientResult.rows[0].id;
+
+    // Check working hours first
+    const availableSlots = await this.getAvailableSlots(doctor_id, appointment_date);
+    if (!availableSlots.includes(slot_time)) {
+      throw { statusCode: 400, message: 'This slot is not available or outside working hours' };
+    }
+
+    const client = await db.pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      // Pessimistic lock on any existing hold for this slot
+      const holdCheck = await client.query(
+        `SELECT id, expires_at FROM appointment_holds 
+         WHERE doctor_id = $1 AND appointment_date = $2 AND slot_time = $3 FOR UPDATE`,
+        [doctor_id, appointment_date, slot_time]
+      );
+
+      if (holdCheck.rowCount > 0) {
+        const hold = holdCheck.rows[0];
+        if (new Date(hold.expires_at) > new Date()) {
+          throw { statusCode: 409, message: 'This slot is currently held by someone else.' };
+        } else {
+          // Delete expired hold
+          await client.query(`DELETE FROM appointment_holds WHERE id = $1`, [hold.id]);
+        }
+      }
+
+      // Check if it got booked in the meantime
+      const appointmentCheck = await client.query(
+        `SELECT id FROM appointments 
+         WHERE doctor_id = $1 AND appointment_date = $2 AND slot_time = $3 AND status != 'cancelled' FOR UPDATE`,
+        [doctor_id, appointment_date, slot_time]
+      );
+
+      if (appointmentCheck.rowCount > 0) {
+        throw { statusCode: 409, message: 'This slot is already booked.' };
+      }
+
+      const expiresAt = new Date();
+      expiresAt.setMinutes(expiresAt.getMinutes() + 5);
+
+      const result = await client.query(
+        `INSERT INTO appointment_holds (patient_id, doctor_id, appointment_date, slot_time, expires_at)
+         VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+        [patient_id, doctor_id, appointment_date, slot_time, expiresAt]
+      );
+
+      await client.query('COMMIT');
+      return result.rows[0];
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 
   async bookAppointment(patientUserId, data) {

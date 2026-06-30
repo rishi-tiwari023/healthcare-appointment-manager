@@ -20,6 +20,15 @@ router.get(
   appointmentsController.getAppointments
 );
 
+// Hold a slot (Patient only)
+router.post(
+  '/hold', 
+  authenticate, 
+  authorize('patient'), 
+  validate(bookAppointmentSchema), 
+  appointmentsController.holdSlot
+);
+
 // Book an appointment (Patient only)
 router.post(
   '/', 
