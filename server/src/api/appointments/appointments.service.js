@@ -155,31 +155,60 @@ class AppointmentsService {
   async bookAppointment(patientUserId, data) {
     const { doctor_id, appointment_date, slot_time } = data;
 
-    // First get the actual patient_id from the users table
     const patientResult = await db.query('SELECT id FROM patients WHERE user_id = $1', [patientUserId]);
     if (patientResult.rowCount === 0) {
       throw { statusCode: 404, message: 'Patient profile not found for this user' };
     }
     const patient_id = patientResult.rows[0].id;
 
-    // Ensure slot is valid and available (Double check)
-    const availableSlots = await this.getAvailableSlots(doctor_id, appointment_date);
-    if (!availableSlots.includes(slot_time)) {
-       throw { statusCode: 400, message: 'This slot is not available or outside working hours' };
-    }
-
+    const client = await db.pool.connect();
     try {
-      const result = await db.query(
+      await client.query('BEGIN');
+
+      // Check for active hold by this patient
+      const holdCheck = await client.query(
+        `SELECT id FROM appointment_holds 
+         WHERE doctor_id = $1 AND appointment_date = $2 AND slot_time = $3 
+         AND patient_id = $4 AND expires_at > CURRENT_TIMESTAMP FOR UPDATE`,
+        [doctor_id, appointment_date, slot_time, patient_id]
+      );
+
+      if (holdCheck.rowCount === 0) {
+        // Either no hold, hold expired, or hold belongs to someone else
+        throw { statusCode: 400, message: 'Hold has expired or does not exist. Please try holding the slot again.' };
+      }
+
+      // Delete the hold
+      await client.query(`DELETE FROM appointment_holds WHERE id = $1`, [holdCheck.rows[0].id]);
+
+      // Check for double booking just in case
+      const appointmentCheck = await client.query(
+        `SELECT id FROM appointments 
+         WHERE doctor_id = $1 AND appointment_date = $2 AND slot_time = $3 AND status != 'cancelled' FOR UPDATE`,
+        [doctor_id, appointment_date, slot_time]
+      );
+
+      if (appointmentCheck.rowCount > 0) {
+        throw { statusCode: 409, message: 'This slot is already booked.' };
+      }
+
+      // Insert appointment
+      const result = await client.query(
         `INSERT INTO appointments (patient_id, doctor_id, appointment_date, slot_time, status)
          VALUES ($1, $2, $3, $4, 'booked') RETURNING *`,
         [patient_id, doctor_id, appointment_date, slot_time]
       );
+
+      await client.query('COMMIT');
       return result.rows[0];
     } catch (error) {
-      if (error.code === '23505') { // Unique violation (Concurrency protection)
+      await client.query('ROLLBACK');
+      if (error.code === '23505') { 
         throw { statusCode: 409, message: 'This time slot was just booked by someone else. Please select another slot.' };
       }
       throw error;
+    } finally {
+      client.release();
     }
   }
 
