@@ -133,16 +133,58 @@ class DoctorsService {
   }
 
   async addLeave(doctorId, date) {
+    const client = await db.pool.connect();
     try {
-      await db.query(
+      await client.query('BEGIN');
+
+      // 1. Insert leave
+      await client.query(
         'INSERT INTO doctor_leave (doctor_id, leave_date) VALUES ($1, $2)',
         [doctorId, date]
       );
+
+      // 2. Find all active appointments for this doctor on this date
+      const appointmentsResult = await client.query(
+        `SELECT a.id, u.email, d.first_name AS doctor_first_name, d.last_name AS doctor_last_name, a.slot_time
+         FROM appointments a
+         JOIN patients p ON a.patient_id = p.id
+         JOIN users u ON p.user_id = u.id
+         JOIN doctors d ON a.doctor_id = d.id
+         WHERE a.doctor_id = $1 AND a.appointment_date = $2 AND a.status != 'cancelled' FOR UPDATE`,
+        [doctorId, date]
+      );
+
+      if (appointmentsResult.rowCount > 0) {
+        const appointmentIds = appointmentsResult.rows.map(row => row.id);
+
+        // 3. Cancel appointments
+        await client.query(
+          `UPDATE appointments SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP 
+           WHERE id = ANY($1::uuid[])`,
+          [appointmentIds]
+        );
+
+        // 4. Queue cancellation emails
+        for (const appt of appointmentsResult.rows) {
+          const subject = 'Appointment Cancelled - Doctor on Leave';
+          const body = `Dear Patient, unfortunately Dr. ${appt.doctor_first_name} ${appt.doctor_last_name} is on leave on ${date}. Your appointment at ${appt.slot_time} has been cancelled. Please log in to reschedule.`;
+          
+          await client.query(
+            `INSERT INTO email_queue (to_email, subject, body) VALUES ($1, $2, $3)`,
+            [appt.email, subject, body]
+          );
+        }
+      }
+
+      await client.query('COMMIT');
     } catch (error) {
+      await client.query('ROLLBACK');
       if (error.code === '23505') {
         throw { statusCode: 409, message: 'Leave already exists for this date' };
       }
       throw error;
+    } finally {
+      client.release();
     }
   }
 
