@@ -2,6 +2,7 @@ const bcrypt = require('bcrypt');
 const db = require('../../db');
 const { enqueueEmail } = require('../email/emailQueue.service');
 const { getLeaveNotificationTemplate } = require('../email/email.templates');
+const calendarService = require('../calendar/calendar.service');
 
 class DoctorsService {
   async getAllDoctors() {
@@ -147,7 +148,8 @@ class DoctorsService {
 
       // 2. Find all active appointments for this doctor on this date
       const appointmentsResult = await client.query(
-        `SELECT a.id, u.email, p.first_name AS patient_first_name, p.last_name AS patient_last_name, d.first_name AS doctor_first_name, d.last_name AS doctor_last_name, a.slot_time
+        `SELECT a.id, u.email, u.id AS patient_user_id, p.first_name AS patient_first_name, p.last_name AS patient_last_name, 
+                d.user_id AS doctor_user_id, d.first_name AS doctor_first_name, d.last_name AS doctor_last_name, a.slot_time
          FROM appointments a
          JOIN patients p ON a.patient_id = p.id
          JOIN users u ON p.user_id = u.id
@@ -166,7 +168,7 @@ class DoctorsService {
           [appointmentIds]
         );
 
-        // 4. Queue cancellation emails
+        // 4. Queue cancellation emails and delete calendar events
         for (const appt of appointmentsResult.rows) {
           const patientName = `${appt.patient_first_name} ${appt.patient_last_name}`;
           const doctorName = `Dr. ${appt.doctor_first_name} ${appt.doctor_last_name}`;
@@ -176,6 +178,9 @@ class DoctorsService {
             'Appointment Cancelled - Doctor on Leave', 
             getLeaveNotificationTemplate(patientName, doctorName, date)
           );
+
+          await calendarService.deleteEvent(appt.id, appt.patient_user_id);
+          await calendarService.deleteEvent(appt.id, appt.doctor_user_id);
         }
       }
 

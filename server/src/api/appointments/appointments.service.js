@@ -1,6 +1,9 @@
 const db = require('../../db');
 const { enqueueEmail } = require('../email/emailQueue.service');
-const { getBookingConfirmationTemplate, getCancellationTemplate, getRescheduleTemplate } = require('../email/email.templates');class AppointmentsService {
+const { getBookingConfirmationTemplate, getCancellationTemplate, getRescheduleTemplate } = require('../email/email.templates');
+const calendarService = require('../calendar/calendar.service');
+
+class AppointmentsService {
   /**
    * Helper function to generate time slots between a start and end time
    * @param {string} startTime - HH:MM:SS
@@ -201,8 +204,9 @@ const { getBookingConfirmationTemplate, getCancellationTemplate, getRescheduleTe
 
       const detailsResult = await client.query(`
         SELECT 
-          p.first_name AS p_fn, p.last_name AS p_ln, pu.email AS p_email,
-          d.first_name AS d_fn, d.last_name AS d_ln, du.email AS d_email
+          p.first_name AS p_fn, p.last_name AS p_ln, pu.email AS p_email, pu.id AS p_user_id,
+          d.first_name AS d_fn, d.last_name AS d_ln, du.email AS d_email, du.id AS d_user_id,
+          d.slot_duration_minutes
         FROM patients p
         JOIN users pu ON p.user_id = pu.id
         CROSS JOIN doctors d
@@ -226,6 +230,19 @@ const { getBookingConfirmationTemplate, getCancellationTemplate, getRescheduleTe
           'New Appointment Booked',
           `<p>Dear ${dName},</p><p>A new appointment has been booked by ${pName} on ${appointment_date} at ${slot_time}.</p>`
         );
+
+        // Calendar Sync
+        const startDateTime = new Date(`${appointment_date}T${slot_time}Z`);
+        const endDateTime = new Date(startDateTime.getTime() + details.slot_duration_minutes * 60000);
+        
+        const eventDetails = {
+          summary: `Appointment: ${pName} with ${dName}`,
+          description: 'Healthcare appointment booked via portal.',
+          startDateTime: startDateTime.toISOString(),
+          endDateTime: endDateTime.toISOString()
+        };
+
+        await calendarService.syncAppointmentForUsers(result.rows[0].id, details.p_user_id, details.d_user_id, eventDetails);
       }
 
       await client.query('COMMIT');
@@ -300,8 +317,8 @@ const { getBookingConfirmationTemplate, getCancellationTemplate, getRescheduleTe
 
     const detailsResult = await db.query(`
       SELECT 
-        p.first_name AS p_fn, p.last_name AS p_ln, pu.email AS p_email,
-        d.first_name AS d_fn, d.last_name AS d_ln, du.email AS d_email,
+        p.first_name AS p_fn, p.last_name AS p_ln, pu.email AS p_email, pu.id AS p_user_id,
+        d.first_name AS d_fn, d.last_name AS d_ln, du.email AS d_email, du.id AS d_user_id,
         a.appointment_date, a.slot_time
       FROM appointments a
       JOIN patients p ON a.patient_id = p.id
@@ -327,6 +344,10 @@ const { getBookingConfirmationTemplate, getCancellationTemplate, getRescheduleTe
         'Appointment Cancelled',
         `<p>Dear ${dName},</p><p>Your appointment with ${pName} on ${details.appointment_date} at ${details.slot_time} has been cancelled.</p>`
       );
+
+      // Calendar Sync: delete events
+      await calendarService.deleteEvent(appointmentId, details.p_user_id);
+      await calendarService.deleteEvent(appointmentId, details.d_user_id);
     }
     
     return result.rows[0];
@@ -398,8 +419,8 @@ const { getBookingConfirmationTemplate, getCancellationTemplate, getRescheduleTe
 
       const detailsResult = await client.query(`
         SELECT 
-          p.first_name AS p_fn, p.last_name AS p_ln, pu.email AS p_email,
-          d.first_name AS d_fn, d.last_name AS d_ln, du.email AS d_email,
+          p.first_name AS p_fn, p.last_name AS p_ln, pu.email AS p_email, pu.id AS p_user_id,
+          d.first_name AS d_fn, d.last_name AS d_ln, du.email AS d_email, du.id AS d_user_id, d.slot_duration_minutes,
           old_a.appointment_date AS old_date, old_a.slot_time AS old_time
         FROM patients p
         JOIN users pu ON p.user_id = pu.id
@@ -425,6 +446,22 @@ const { getBookingConfirmationTemplate, getCancellationTemplate, getRescheduleTe
           'Appointment Rescheduled',
           `<p>Dear ${dName},</p><p>Your appointment with ${pName} originally on ${details.old_date} at ${details.old_time} has been rescheduled to ${appointment_date} at ${slot_time}.</p>`
         );
+
+        // Calendar Sync
+        const startDateTime = new Date(`${appointment_date}T${slot_time}Z`);
+        const endDateTime = new Date(startDateTime.getTime() + details.slot_duration_minutes * 60000);
+        
+        const eventDetails = {
+          summary: `Appointment: ${pName} with ${dName}`,
+          description: 'Healthcare appointment rescheduled via portal.',
+          startDateTime: startDateTime.toISOString(),
+          endDateTime: endDateTime.toISOString()
+        };
+
+        // Note: Google Calendar requires deleting and recreating if the event was already deleted, 
+        // but since we keep the same appointmentId, updateEvent should work if it exists.
+        await calendarService.updateEvent(appointmentId, details.p_user_id, eventDetails);
+        await calendarService.updateEvent(appointmentId, details.d_user_id, eventDetails);
       }
 
       await client.query('COMMIT');
