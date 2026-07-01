@@ -160,6 +160,13 @@ CREATE TABLE IF NOT EXISTS email_queue (
 );
 
 -- 6. Integrations & Auditing
+CREATE TABLE IF NOT EXISTS user_oauth_tokens (
+    user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    refresh_token TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS calendar_sync (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     appointment_id UUID NOT NULL REFERENCES appointments(id) ON DELETE CASCADE,
