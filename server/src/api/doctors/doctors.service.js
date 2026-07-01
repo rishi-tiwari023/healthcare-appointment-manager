@@ -1,5 +1,7 @@
 const bcrypt = require('bcrypt');
 const db = require('../../db');
+const { enqueueEmail } = require('../email/emailQueue.service');
+const { getLeaveNotificationTemplate } = require('../email/email.templates');
 
 class DoctorsService {
   async getAllDoctors() {
@@ -145,7 +147,7 @@ class DoctorsService {
 
       // 2. Find all active appointments for this doctor on this date
       const appointmentsResult = await client.query(
-        `SELECT a.id, u.email, d.first_name AS doctor_first_name, d.last_name AS doctor_last_name, a.slot_time
+        `SELECT a.id, u.email, p.first_name AS patient_first_name, p.last_name AS patient_last_name, d.first_name AS doctor_first_name, d.last_name AS doctor_last_name, a.slot_time
          FROM appointments a
          JOIN patients p ON a.patient_id = p.id
          JOIN users u ON p.user_id = u.id
@@ -166,12 +168,13 @@ class DoctorsService {
 
         // 4. Queue cancellation emails
         for (const appt of appointmentsResult.rows) {
-          const subject = 'Appointment Cancelled - Doctor on Leave';
-          const body = `Dear Patient, unfortunately Dr. ${appt.doctor_first_name} ${appt.doctor_last_name} is on leave on ${date}. Your appointment at ${appt.slot_time} has been cancelled. Please log in to reschedule.`;
+          const patientName = `${appt.patient_first_name} ${appt.patient_last_name}`;
+          const doctorName = `Dr. ${appt.doctor_first_name} ${appt.doctor_last_name}`;
           
-          await client.query(
-            `INSERT INTO email_queue (to_email, subject, body) VALUES ($1, $2, $3)`,
-            [appt.email, subject, body]
+          await enqueueEmail(
+            appt.email, 
+            'Appointment Cancelled - Doctor on Leave', 
+            getLeaveNotificationTemplate(patientName, doctorName, date)
           );
         }
       }

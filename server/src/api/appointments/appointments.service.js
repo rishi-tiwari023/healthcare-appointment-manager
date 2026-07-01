@@ -1,6 +1,6 @@
 const db = require('../../db');
-
-class AppointmentsService {
+const { enqueueEmail } = require('../email/emailQueue.service');
+const { getBookingConfirmationTemplate, getCancellationTemplate, getRescheduleTemplate } = require('../email/email.templates');class AppointmentsService {
   /**
    * Helper function to generate time slots between a start and end time
    * @param {string} startTime - HH:MM:SS
@@ -199,6 +199,35 @@ class AppointmentsService {
         [patient_id, doctor_id, appointment_date, slot_time]
       );
 
+      const detailsResult = await client.query(`
+        SELECT 
+          p.first_name AS p_fn, p.last_name AS p_ln, pu.email AS p_email,
+          d.first_name AS d_fn, d.last_name AS d_ln, du.email AS d_email
+        FROM patients p
+        JOIN users pu ON p.user_id = pu.id
+        CROSS JOIN doctors d
+        JOIN users du ON d.user_id = du.id
+        WHERE p.id = $1 AND d.id = $2
+      `, [patient_id, doctor_id]);
+
+      if (detailsResult.rowCount > 0) {
+        const details = detailsResult.rows[0];
+        const pName = `${details.p_fn} ${details.p_ln}`;
+        const dName = `Dr. ${details.d_fn} ${details.d_ln}`;
+        
+        await enqueueEmail(
+          details.p_email, 
+          'Appointment Confirmed', 
+          getBookingConfirmationTemplate(pName, dName, appointment_date, slot_time)
+        );
+        
+        await enqueueEmail(
+          details.d_email,
+          'New Appointment Booked',
+          `<p>Dear ${dName},</p><p>A new appointment has been booked by ${pName} on ${appointment_date} at ${slot_time}.</p>`
+        );
+      }
+
       await client.query('COMMIT');
       return result.rows[0];
     } catch (error) {
@@ -268,6 +297,37 @@ class AppointmentsService {
       `UPDATE appointments SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING *`,
       [appointmentId]
     );
+
+    const detailsResult = await db.query(`
+      SELECT 
+        p.first_name AS p_fn, p.last_name AS p_ln, pu.email AS p_email,
+        d.first_name AS d_fn, d.last_name AS d_ln, du.email AS d_email,
+        a.appointment_date, a.slot_time
+      FROM appointments a
+      JOIN patients p ON a.patient_id = p.id
+      JOIN users pu ON p.user_id = pu.id
+      JOIN doctors d ON a.doctor_id = d.id
+      JOIN users du ON d.user_id = du.id
+      WHERE a.id = $1
+    `, [appointmentId]);
+
+    if (detailsResult.rowCount > 0) {
+      const details = detailsResult.rows[0];
+      const pName = `${details.p_fn} ${details.p_ln}`;
+      const dName = `Dr. ${details.d_fn} ${details.d_ln}`;
+      
+      await enqueueEmail(
+        details.p_email, 
+        'Appointment Cancelled', 
+        getCancellationTemplate(pName, dName, details.appointment_date, details.slot_time)
+      );
+      
+      await enqueueEmail(
+        details.d_email,
+        'Appointment Cancelled',
+        `<p>Dear ${dName},</p><p>Your appointment with ${pName} on ${details.appointment_date} at ${details.slot_time} has been cancelled.</p>`
+      );
+    }
     
     return result.rows[0];
   }
@@ -336,6 +396,37 @@ class AppointmentsService {
         [appt.patient_id, doctor_id, appointment_date, slot_time]
       );
 
+      const detailsResult = await client.query(`
+        SELECT 
+          p.first_name AS p_fn, p.last_name AS p_ln, pu.email AS p_email,
+          d.first_name AS d_fn, d.last_name AS d_ln, du.email AS d_email,
+          old_a.appointment_date AS old_date, old_a.slot_time AS old_time
+        FROM patients p
+        JOIN users pu ON p.user_id = pu.id
+        CROSS JOIN doctors d
+        JOIN users du ON d.user_id = du.id
+        CROSS JOIN appointments old_a
+        WHERE p.id = $1 AND d.id = $2 AND old_a.id = $3
+      `, [appt.patient_id, doctor_id, appointmentId]);
+
+      if (detailsResult.rowCount > 0) {
+        const details = detailsResult.rows[0];
+        const pName = `${details.p_fn} ${details.p_ln}`;
+        const dName = `Dr. ${details.d_fn} ${details.d_ln}`;
+        
+        await enqueueEmail(
+          details.p_email, 
+          'Appointment Rescheduled', 
+          getRescheduleTemplate(pName, dName, details.old_date, details.old_time, appointment_date, slot_time)
+        );
+        
+        await enqueueEmail(
+          details.d_email,
+          'Appointment Rescheduled',
+          `<p>Dear ${dName},</p><p>Your appointment with ${pName} originally on ${details.old_date} at ${details.old_time} has been rescheduled to ${appointment_date} at ${slot_time}.</p>`
+        );
+      }
+
       await client.query('COMMIT');
       return result.rows[0];
     } catch (error) {
@@ -344,6 +435,39 @@ class AppointmentsService {
     } finally {
       client.release();
     }
+  }
+
+  async sendUpcomingAppointmentReminders() {
+    // Call this via a daily cron job
+    const { getReminderTemplate } = require('../email/email.templates');
+    
+    // Find appointments booked for tomorrow
+    const query = `
+      SELECT a.id, a.appointment_date, a.slot_time, 
+             p.first_name AS p_fn, p.last_name AS p_ln, pu.email AS p_email,
+             d.first_name AS d_fn, d.last_name AS d_ln
+      FROM appointments a
+      JOIN patients p ON a.patient_id = p.id
+      JOIN users pu ON p.user_id = pu.id
+      JOIN doctors d ON a.doctor_id = d.id
+      WHERE a.status = 'booked' 
+        AND a.appointment_date = CURRENT_DATE + INTERVAL '1 day'
+    `;
+    
+    const result = await db.query(query);
+    
+    for (const appt of result.rows) {
+      const pName = `${appt.p_fn} ${appt.p_ln}`;
+      const dName = `Dr. ${appt.d_fn} ${appt.d_ln}`;
+      
+      await enqueueEmail(
+        appt.p_email,
+        'Appointment Reminder',
+        getReminderTemplate(pName, dName, appt.appointment_date, appt.slot_time)
+      );
+    }
+    
+    return result.rowCount;
   }
 }
 
