@@ -474,6 +474,22 @@ class AppointmentsService {
     }
   }
 
+  async cleanupExpiredHolds() {
+    try {
+      const result = await db.query(`
+        DELETE FROM appointment_holds
+        WHERE expires_at < NOW()
+        RETURNING id
+      `);
+      if (result.rowCount > 0) {
+        console.log(`Cleaned up ${result.rowCount} expired appointment holds.`);
+      }
+      return result.rowCount;
+    } catch (error) {
+      console.error('Error cleaning up expired holds:', error);
+    }
+  }
+
   async sendUpcomingAppointmentReminders() {
     // Call this via a daily cron job
     const { getReminderTemplate } = require('../email/email.templates');

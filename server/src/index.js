@@ -14,6 +14,7 @@ const aiRoutes = require('./api/ai/ai.routes');
 const calendarRoutes = require('./api/calendar/calendar.routes');
 const prescriptionsRoutes = require('./api/prescriptions/prescriptions.routes');
 const globalErrorHandler = require('./common/middleware/error.middleware');
+const initCronJobs = require('./jobs/cron');
 
 const app = express();
 const PORT = process.env.PORT;
@@ -49,4 +50,5 @@ app.use(globalErrorHandler);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+  initCronJobs();
 });
