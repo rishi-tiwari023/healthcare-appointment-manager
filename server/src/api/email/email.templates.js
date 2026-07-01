@@ -72,10 +72,23 @@ const getRescheduleTemplate = (patientName, doctorName, oldDate, oldTime, newDat
   `;
 };
 
+const getMedicationReminderTemplate = (patientName, medicationName) => {
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+      <h2 style="color: #00BCD4;">Medication Reminder</h2>
+      <p>Dear ${patientName},</p>
+      <p>This is a gentle reminder to take your prescribed medication: <strong>${medicationName}</strong>.</p>
+      <p>Please remember to take it as prescribed by your doctor to ensure a speedy recovery!</p>
+      <p>Best Regards,<br>Healthcare Clinic</p>
+    </div>
+  `;
+};
+
 module.exports = {
   getBookingConfirmationTemplate,
   getReminderTemplate,
   getCancellationTemplate,
   getLeaveNotificationTemplate,
   getRescheduleTemplate,
+  getMedicationReminderTemplate,
 };

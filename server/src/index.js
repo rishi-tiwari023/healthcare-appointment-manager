@@ -12,12 +12,12 @@ const patientsRoutes = require('./api/patients/patients.routes');
 const appointmentsRoutes = require('./api/appointments/appointments.routes');
 const aiRoutes = require('./api/ai/ai.routes');
 const calendarRoutes = require('./api/calendar/calendar.routes');
+const prescriptionsRoutes = require('./api/prescriptions/prescriptions.routes');
 const globalErrorHandler = require('./common/middleware/error.middleware');
 
 const app = express();
 const PORT = process.env.PORT;
 
-// Middleware
 app.use(helmet());
 app.use(cors({
   origin: process.env.FRONTEND_URL,
@@ -26,7 +26,6 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-// Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // Limit each IP to 100 requests per windowMs
@@ -34,23 +33,20 @@ const limiter = rateLimit({
 });
 app.use('/api', limiter);
 
-// Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/doctors', doctorsRoutes);
 app.use('/api/patients', patientsRoutes);
 app.use('/api/appointments', appointmentsRoutes);
 app.use('/api/appointments/:appointmentId', aiRoutes);
 app.use('/api/calendar', calendarRoutes);
+app.use('/api', prescriptionsRoutes);
 
-// Health check
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date() });
 });
 
-// Global Error Handler (must be last middleware)
 app.use(globalErrorHandler);
 
-// Start server
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
