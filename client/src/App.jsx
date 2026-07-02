@@ -5,7 +5,11 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Unauthorized from './pages/Unauthorized';
-import { AdminDashboard, DoctorDashboard, PatientDashboard } from './pages/Dashboards';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import DoctorList from './pages/admin/DoctorList';
+import DoctorForm from './pages/admin/DoctorForm';
+import LeaveManagement from './pages/admin/LeaveManagement';
+import { DoctorDashboard, PatientDashboard } from './pages/Dashboards';
 
 export default function App() {
   return (
@@ -21,6 +25,10 @@ export default function App() {
           {/* Protected Routes - Admin Only */}
           <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/doctors" element={<DoctorList />} />
+            <Route path="/admin/doctors/new" element={<DoctorForm />} />
+            <Route path="/admin/doctors/:id/edit" element={<DoctorForm />} />
+            <Route path="/admin/leave" element={<LeaveManagement />} />
           </Route>
 
           {/* Protected Routes - Doctor Only */}
