@@ -65,6 +65,15 @@ class DoctorsController {
     }
   }
 
+  async getLeave(req, res, next) {
+    try {
+      const leaves = await doctorsService.getLeave(req.params.id);
+      return successResponse(res, 200, 'Leaves fetched successfully', leaves);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async addLeave(req, res, next) {
     try {
       await doctorsService.addLeave(req.params.id, req.body.leave_date);

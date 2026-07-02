@@ -36,6 +36,8 @@ router.post(
   doctorsController.setAvailability
 );
 
+router.get('/:id/leave', authenticate, doctorsController.getLeave);
+
 router.post(
   '/:id/leave', 
   authenticate, 

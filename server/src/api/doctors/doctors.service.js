@@ -135,6 +135,14 @@ class DoctorsService {
     }
   }
 
+  async getLeave(doctorId) {
+    const result = await db.query(
+      'SELECT id, leave_date FROM doctor_leave WHERE doctor_id = $1 ORDER BY leave_date ASC',
+      [doctorId]
+    );
+    return result.rows;
+  }
+
   async addLeave(doctorId, date) {
     const client = await db.pool.connect();
     try {
