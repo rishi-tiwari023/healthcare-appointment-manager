@@ -11,6 +11,15 @@ class PatientsController {
     }
   }
 
+  async getMe(req, res, next) {
+    try {
+      const patient = await patientsService.getPatientByUserId(req.user.id);
+      return successResponse(res, 200, 'Current patient fetched successfully', patient);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async getPatientById(req, res, next) {
     try {
       const patient = await patientsService.getPatientById(req.params.id);

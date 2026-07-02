@@ -7,7 +7,7 @@ const calendarService = require('../calendar/calendar.service');
 class DoctorsService {
   async getAllDoctors() {
     const result = await db.query(
-      `SELECT d.id, d.user_id, d.first_name, d.last_name, d.specialisation, d.slot_duration_minutes, u.email, u.profile_image_url
+      `SELECT d.id, d.user_id, d.first_name, d.last_name, d.specialisation, d.slot_duration_minutes, d.phone_number, u.email, u.profile_image_url
        FROM doctors d
        JOIN users u ON d.user_id = u.id`
     );
@@ -30,7 +30,7 @@ class DoctorsService {
   }
 
   async createDoctor(data) {
-    const { email, password, first_name, last_name, specialisation, slot_duration_minutes } = data;
+    const { email, password, first_name, last_name, specialisation, slot_duration_minutes, schedules } = data;
 
     const existingUser = await db.query('SELECT id FROM users WHERE email = $1', [email]);
     if (existingUser.rowCount > 0) {
@@ -54,8 +54,19 @@ class DoctorsService {
         [user.id, first_name, last_name, specialisation, slot_duration_minutes]
       );
 
+      const doctor = doctorResult.rows[0];
+
+      if (schedules && schedules.length > 0) {
+        for (const schedule of schedules) {
+          await client.query(
+            'INSERT INTO doctor_availability (doctor_id, day_of_week, start_time, end_time) VALUES ($1, $2, $3, $4)',
+            [doctor.id, schedule.day_of_week, schedule.start_time, schedule.end_time]
+          );
+        }
+      }
+
       await client.query('COMMIT');
-      return { ...doctorResult.rows[0], email: user.email };
+      return { ...doctor, email: user.email };
     } catch (error) {
       await client.query('ROLLBACK');
       throw error;
@@ -69,7 +80,9 @@ class DoctorsService {
     const values = [];
     let idx = 1;
 
-    for (const [key, value] of Object.entries(data)) {
+    const { schedules, ...doctorFields } = data;
+    
+    for (const [key, value] of Object.entries(doctorFields)) {
       if (value !== undefined) {
         fields.push(`${key} = $${idx}`);
         values.push(value);
@@ -77,18 +90,26 @@ class DoctorsService {
       }
     }
 
-    if (fields.length === 0) {
+    if (fields.length === 0 && !schedules) {
       throw { statusCode: 400, message: 'No fields provided for update' };
     }
 
-    values.push(id);
-    const query = `UPDATE doctors SET ${fields.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = $${idx} RETURNING *`;
-    
-    const result = await db.query(query, values);
-    if (result.rowCount === 0) {
-      throw { statusCode: 404, message: 'Doctor not found' };
+    let doctorRow = null;
+    if (fields.length > 0) {
+      values.push(id);
+      const query = `UPDATE doctors SET ${fields.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = $${idx} RETURNING *`;
+      const result = await db.query(query, values);
+      if (result.rowCount === 0) {
+        throw { statusCode: 404, message: 'Doctor not found' };
+      }
+      doctorRow = result.rows[0];
     }
-    return result.rows[0];
+
+    if (schedules) {
+      await this.setAvailability(id, schedules);
+    }
+    
+    return doctorRow || { id, message: 'Availability updated' };
   }
 
   async deleteDoctor(id) {

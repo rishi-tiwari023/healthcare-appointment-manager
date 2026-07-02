@@ -40,6 +40,14 @@ router.get(
   patientsController.searchPatients
 );
 
+// Get current logged-in patient profile
+router.get(
+  '/me',
+  authenticate,
+  authorize('patient'),
+  patientsController.getMe
+);
+
 // Targeted Access (Specific Patient, Doctor, or Admin)
 router.get(
   '/:id', 

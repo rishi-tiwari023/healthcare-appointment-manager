@@ -1,0 +1,14 @@
+import axiosInstance from './axios';
+
+export const patientApi = {
+  getDoctors: () => axiosInstance.get('/doctors'),
+  
+  getAppointments: () => axiosInstance.get('/appointments'),
+  getAvailableSlots: (doctorId, date) => axiosInstance.get(`/appointments/slots`, { params: { doctor_id: doctorId, date } }),
+  holdSlot: (data) => axiosInstance.post('/appointments/hold', data),
+  bookAppointment: (data) => axiosInstance.post('/appointments', data),
+  cancelAppointment: (id) => axiosInstance.put(`/appointments/${id}/cancel`),
+
+  getPatientProfile: () => axiosInstance.get('/patients/me'),
+  getPatientHistory: (patientId) => axiosInstance.get(`/patients/${patientId}/history`),
+};

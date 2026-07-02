@@ -73,7 +73,7 @@ const DoctorForm = () => {
           setValue('first_name', doctor.first_name);
           setValue('last_name', doctor.last_name);
           setValue('specialisation', doctor.specialisation);
-          setValue('slot_duration_minutes', doctor.slot_duration_mins.toString());
+          setValue('slot_duration_minutes', doctor.slot_duration_minutes.toString());
 
           const fetchedSchedules = availRes.data.data || [];
           setSchedules(prev => prev.map(p => {

@@ -9,7 +9,11 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import DoctorList from './pages/admin/DoctorList';
 import DoctorForm from './pages/admin/DoctorForm';
 import LeaveManagement from './pages/admin/LeaveManagement';
-import { DoctorDashboard, PatientDashboard } from './pages/Dashboards';
+import PatientDashboard from './pages/patient/PatientDashboard';
+import SearchDoctors from './pages/patient/SearchDoctors';
+import BookingFlow from './pages/patient/BookingFlow';
+import AppointmentHistory from './pages/patient/AppointmentHistory';
+import { DoctorDashboard } from './pages/Dashboards';
 
 export default function App() {
   return (
@@ -39,6 +43,9 @@ export default function App() {
           {/* Protected Routes - Patient Only */}
           <Route element={<ProtectedRoute allowedRoles={['patient']} />}>
             <Route path="/patient/dashboard" element={<PatientDashboard />} />
+            <Route path="/patient/doctors" element={<SearchDoctors />} />
+            <Route path="/patient/book/:doctorId" element={<BookingFlow />} />
+            <Route path="/patient/history" element={<AppointmentHistory />} />
           </Route>
 
           {/* Catch all */}

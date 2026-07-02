@@ -40,9 +40,17 @@ const Register = () => {
     setIsLoading(true);
     setApiError('');
     try {
-      const { confirmPassword, ...userData } = data;
+      const { confirmPassword, firstName, lastName, dateOfBirth, phone, ...rest } = data;
       
-      await authApi.register(userData);
+      const payload = {
+        ...rest,
+        first_name: firstName,
+        last_name: lastName,
+        date_of_birth: dateOfBirth,
+        phone_number: phone,
+      };
+
+      await authApi.register(payload);
       
       setSuccess(true);
       setTimeout(() => {

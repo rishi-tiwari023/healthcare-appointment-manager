@@ -120,7 +120,7 @@ const DoctorList = () => {
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{doctor.email}</td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{doctor.specialisation}</td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{doctor.slot_duration_mins} mins</td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{doctor.slot_duration_minutes} mins</td>
                         <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                           <Link to={`/admin/doctors/${doctor.id}/edit`} className="text-indigo-600 hover:text-indigo-900 mr-4">
                             <Edit className="h-5 w-5 inline" />
