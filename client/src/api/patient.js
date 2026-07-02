@@ -8,6 +8,7 @@ export const patientApi = {
   holdSlot: (data) => axiosInstance.post('/appointments/hold', data),
   bookAppointment: (data) => axiosInstance.post('/appointments', data),
   cancelAppointment: (id) => axiosInstance.put(`/appointments/${id}/cancel`),
+  rescheduleAppointment: (id, data) => axiosInstance.put(`/appointments/${id}/reschedule`, data),
 
   getPatientProfile: () => axiosInstance.get('/patients/me'),
   getPatientHistory: (patientId) => axiosInstance.get(`/patients/${patientId}/history`),

@@ -264,7 +264,7 @@ class AppointmentsService {
       SELECT 
         a.id, a.appointment_date, a.slot_time, a.status,
         p.id AS patient_id, p.first_name AS patient_first_name, p.last_name AS patient_last_name,
-        d.first_name AS doctor_first_name, d.last_name AS doctor_last_name, d.specialisation
+        d.id AS doctor_id, d.first_name AS doctor_first_name, d.last_name AS doctor_last_name, d.specialisation
       FROM appointments a
       JOIN patients p ON a.patient_id = p.id
       JOIN doctors d ON a.doctor_id = d.id
@@ -375,8 +375,8 @@ class AppointmentsService {
       throw { statusCode: 403, message: 'Forbidden to reschedule this appointment' };
     }
 
-    if (appt.status === 'cancelled') {
-      throw { statusCode: 400, message: 'Cannot reschedule a cancelled appointment' };
+    if (appt.status === 'cancelled' || appt.status === 'completed') {
+      throw { statusCode: 400, message: `Cannot reschedule a ${appt.status} appointment` };
     }
 
     const client = await db.pool.connect();

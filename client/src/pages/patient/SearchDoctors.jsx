@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import { patientApi } from '../../api/patient';
-import { Search, User, Filter, AlertCircle, Clock } from 'lucide-react';
+import { Search, User, Filter, AlertCircle, Clock, Star, MapPin } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { SkeletonCard } from '../../components/ui/Skeleton';
 

@@ -95,14 +95,15 @@ class PatientsService {
         aipost.patient_friendly_summary,
         aipost.medication_schedule,
         aipost.follow_up_instructions,
-        pr.clinical_notes AS prescription_notes
+        pr.clinical_notes AS prescription_notes,
+        pr.medications AS medications
       FROM appointments a
       JOIN doctors d ON a.doctor_id = d.id
       LEFT JOIN symptoms s ON a.id = s.appointment_id
       LEFT JOIN ai_summaries aipre ON a.id = aipre.appointment_id AND aipre.summary_type = 'pre_visit'
       LEFT JOIN ai_summaries aipost ON a.id = aipost.appointment_id AND aipost.summary_type = 'post_visit'
       LEFT JOIN prescriptions pr ON a.id = pr.appointment_id
-      WHERE a.patient_id = $1
+      WHERE a.patient_id = $1 AND a.status IN ('completed', 'cancelled')
       ORDER BY a.appointment_date DESC, a.created_at DESC
     `;
     

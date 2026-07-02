@@ -140,7 +140,28 @@ const AppointmentHistory = () => {
                               Prescription & Doctor's Notes
                             </h5>
                             <div className="text-sm text-gray-700 bg-white p-4 rounded-lg border border-emerald-100 shadow-inner whitespace-pre-wrap">
-                              {record.prescription_notes}
+                              <p>{record.prescription_notes}</p>
+                              {(() => {
+                                let meds = record.medications;
+                                if (typeof meds === 'string') {
+                                  try { meds = JSON.parse(meds); } catch (e) { meds = []; }
+                                }
+                                if (meds && Array.isArray(meds) && meds.length > 0 && meds[0] !== null) {
+                                  return (
+                                    <div className="mt-4 border-t border-emerald-100 pt-4">
+                                      <h6 className="font-semibold text-emerald-800 mb-2">Prescribed Medications:</h6>
+                                      <ul className="list-disc pl-5 space-y-1">
+                                        {meds.filter(med => med !== null).map((med, idx) => (
+                                          <li key={idx}>
+                                            <span className="font-medium">{med.medication_name}</span> - {med.dosage}, {med.frequency} (for {med.duration_days} days)
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              })()}
                             </div>
                           </div>
                         ) : (

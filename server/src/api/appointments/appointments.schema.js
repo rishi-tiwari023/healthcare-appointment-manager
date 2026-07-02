@@ -1,7 +1,7 @@
 const { z } = require('zod');
 
 const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-const timeRegex = /^([0-1][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/; // HH:MM:SS format
+const timeRegex = /^([0-1][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/;
 
 const getSlotsSchema = z.object({
   doctor_id: z.string().uuid('Invalid doctor ID format'),
