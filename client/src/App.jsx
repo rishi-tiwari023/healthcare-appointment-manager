@@ -13,7 +13,8 @@ import PatientDashboard from './pages/patient/PatientDashboard';
 import SearchDoctors from './pages/patient/SearchDoctors';
 import BookingFlow from './pages/patient/BookingFlow';
 import AppointmentHistory from './pages/patient/AppointmentHistory';
-import { DoctorDashboard } from './pages/Dashboards';
+import DoctorDashboard from './pages/doctor/DoctorDashboard';
+import AppointmentVisit from './pages/doctor/AppointmentVisit';
 
 export default function App() {
   return (
@@ -38,6 +39,7 @@ export default function App() {
           {/* Protected Routes - Doctor Only */}
           <Route element={<ProtectedRoute allowedRoles={['doctor']} />}>
             <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
+            <Route path="/doctor/visit/:appointmentId" element={<AppointmentVisit />} />
           </Route>
 
           {/* Protected Routes - Patient Only */}
