@@ -4,6 +4,8 @@ import DashboardLayout from '../../components/DashboardLayout';
 import { patientApi } from '../../api/patient';
 import { Calendar, Clock, MapPin, User, ChevronRight } from 'lucide-react';
 import { format, isAfter, isToday } from 'date-fns';
+import { toast } from 'react-hot-toast';
+import { SkeletonCard } from '../../components/ui/Skeleton';
 
 const PatientDashboard = () => {
   const [appointments, setAppointments] = useState([]);
@@ -29,6 +31,7 @@ const PatientDashboard = () => {
         upcoming.sort((a, b) => new Date(`${a.appointment_date}T${a.slot_time}Z`) - new Date(`${b.appointment_date}T${b.slot_time}Z`));
         setAppointments(upcoming);
       } catch (err) {
+        toast.error('Failed to load appointments');
         setError('Failed to load appointments.');
       } finally {
         setIsLoading(false);
@@ -43,8 +46,9 @@ const PatientDashboard = () => {
       try {
         await patientApi.cancelAppointment(id);
         setAppointments(prev => prev.filter(app => app.id !== id));
+        toast.success('Appointment cancelled');
       } catch (err) {
-        alert(err.response?.data?.message || 'Failed to cancel appointment');
+        toast.error(err.response?.data?.message || 'Failed to cancel appointment');
       }
     }
   };
@@ -69,10 +73,10 @@ const PatientDashboard = () => {
       </div>
 
       {isLoading ? (
-        <div className="animate-pulse space-y-4">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 h-32"></div>
-          ))}
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
         </div>
       ) : error ? (
         <div className="bg-red-50 p-4 rounded-md">

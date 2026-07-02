@@ -16,9 +16,12 @@ import AppointmentHistory from './pages/patient/AppointmentHistory';
 import DoctorDashboard from './pages/doctor/DoctorDashboard';
 import AppointmentVisit from './pages/doctor/AppointmentVisit';
 
+import { Toaster } from 'react-hot-toast';
+
 export default function App() {
   return (
     <AuthProvider>
+      <Toaster position="top-right" />
       <BrowserRouter>
         <Routes>
           {/* Public Routes */}

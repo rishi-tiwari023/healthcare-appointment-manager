@@ -3,6 +3,8 @@ import DashboardLayout from '../../components/DashboardLayout';
 import { adminApi } from '../../api/admin';
 import { Link } from 'react-router-dom';
 import { Edit, Trash2, Plus, AlertCircle } from 'lucide-react';
+import { toast } from 'react-hot-toast';
+import { SkeletonRow } from '../../components/ui/Skeleton';
 
 const DoctorList = () => {
   const [doctors, setDoctors] = useState([]);
@@ -22,6 +24,7 @@ const DoctorList = () => {
       setDoctors(res.data.data);
     } catch (err) {
       setError('Failed to fetch doctors list');
+      toast.error('Failed to load doctors');
     } finally {
       setIsLoading(false);
     }
@@ -37,8 +40,9 @@ const DoctorList = () => {
     try {
       await adminApi.deleteDoctor(id);
       setDoctors(doctors.filter(d => d.id !== id));
+      toast.success('Doctor deleted successfully');
     } catch (err) {
-      alert('Failed to delete doctor');
+      toast.error('Failed to delete doctor');
     }
   };
 
@@ -102,8 +106,10 @@ const DoctorList = () => {
                 <tbody className="divide-y divide-gray-200 bg-white">
                   {isLoading ? (
                     <tr>
-                      <td colSpan="5" className="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-center text-gray-500 sm:pl-6">
-                        Loading...
+                      <td colSpan="5" className="p-0">
+                        <SkeletonRow columns={5} />
+                        <SkeletonRow columns={5} />
+                        <SkeletonRow columns={5} />
                       </td>
                     </tr>
                   ) : doctors.length === 0 ? (

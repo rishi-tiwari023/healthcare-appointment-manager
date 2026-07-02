@@ -5,6 +5,7 @@ import { patientApi } from '../../api/patient';
 import { adminApi } from '../../api/admin';
 import { Calendar as CalendarIcon, Clock, ArrowLeft, CheckCircle } from 'lucide-react';
 import { format, addDays } from 'date-fns';
+import { toast } from 'react-hot-toast';
 
 const BookingFlow = () => {
   const { doctorId } = useParams();
@@ -39,6 +40,7 @@ const BookingFlow = () => {
         const res = await adminApi.getDoctorById(doctorId);
         setDoctor(res.data.data);
       } catch (err) {
+        toast.error('Failed to load doctor details.');
         setError('Failed to load doctor details.');
       }
     };
@@ -55,6 +57,7 @@ const BookingFlow = () => {
         const res = await patientApi.getAvailableSlots(doctorId, selectedDate);
         setAvailableSlots(res.data.data || []);
       } catch (err) {
+        toast.error('Failed to load availability for this date.');
         setError('Failed to load availability for this date.');
       } finally {
         setIsLoadingSlots(false);
@@ -77,6 +80,7 @@ const BookingFlow = () => {
       });
       setHoldSuccess(true);
     } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to hold this slot. It might be taken.');
       setError(err.response?.data?.message || 'Failed to hold this slot. It might be taken.');
       setSelectedSlot(null);
     } finally {
@@ -102,8 +106,10 @@ const BookingFlow = () => {
           slot_time: selectedSlot
         });
       }
+      toast.success('Appointment confirmed!');
       navigate('/patient/dashboard');
     } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to confirm booking.');
       setError(err.response?.data?.message || 'Failed to confirm booking.');
     } finally {
       setIsConfirming(false);

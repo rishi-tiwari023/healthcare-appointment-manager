@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import { adminApi } from '../../api/admin';
-import { Trash2, AlertCircle } from 'lucide-react';
+import { AlertCircle, Trash2, Calendar } from 'lucide-react';
+import { toast } from 'react-hot-toast';
+import { SkeletonRow } from '../../components/ui/Skeleton';
 
 const LeaveManagement = () => {
   const [doctors, setDoctors] = useState([]);
@@ -26,6 +28,7 @@ const LeaveManagement = () => {
         const res = await adminApi.getAllDoctors();
         setDoctors(res.data.data);
       } catch (err) {
+        toast.error('Failed to load doctors list');
         setError('Failed to load doctors list');
       } finally {
         setIsLoadingDoctors(false);
@@ -49,6 +52,7 @@ const LeaveManagement = () => {
       const res = await adminApi.getDoctorLeave(doctorId);
       setLeaves(res.data.data);
     } catch (err) {
+      toast.error('Failed to fetch doctor leaves');
       setError('Failed to fetch doctor leaves');
     } finally {
       setIsLoadingLeaves(false);
@@ -63,12 +67,14 @@ const LeaveManagement = () => {
     setError('');
     setMessage('');
     try {
-      await adminApi.addDoctorLeave(selectedDoctorId, { leave_date: leaveDate });
-      setMessage('Leave marked successfully. Affected appointments have been cancelled.');
+      const res = await adminApi.addDoctorLeave(selectedDoctorId, { leave_date: leaveDate });
+      toast.success('Leave marked successfully');
       setLeaveDate('');
       fetchLeaves(selectedDoctorId);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to add leave');
+      const msg = err.response?.data?.message || 'Failed to add leave';
+      toast.error(msg);
+      setError(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -82,10 +88,12 @@ const LeaveManagement = () => {
     try {
       const isoDate = new Date(date).toISOString().split('T')[0];
       await adminApi.removeDoctorLeave(selectedDoctorId, isoDate);
+      toast.success('Leave removed successfully');
       fetchLeaves(selectedDoctorId);
-      setMessage('Leave removed successfully.');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to remove leave');
+      const msg = err.response?.data?.message || 'Failed to remove leave';
+      toast.error(msg);
+      setError(msg);
     }
   };
 
@@ -179,7 +187,16 @@ const LeaveManagement = () => {
             {!selectedDoctorId ? (
               <p className="text-sm text-gray-500 text-center py-4">Select a doctor to view their leave schedule.</p>
             ) : isLoadingLeaves ? (
-              <p className="text-sm text-gray-500 text-center py-4">Loading leaves...</p>
+              <table className="min-w-full">
+                <tbody>
+                  <tr>
+                    <td colSpan="2" className="p-0">
+                      <SkeletonRow columns={2} />
+                      <SkeletonRow columns={2} />
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             ) : leaves.length === 0 ? (
               <p className="text-sm text-gray-500 text-center py-4">No leave dates found for this doctor.</p>
             ) : (
@@ -190,7 +207,10 @@ const LeaveManagement = () => {
                   });
                   return (
                     <li key={leave.id} className="py-4 flex justify-between items-center">
-                      <span className="text-sm font-medium text-gray-900">{leaveDateStr}</span>
+                      <span className="text-sm font-medium text-gray-900 flex items-center">
+                        <Calendar className="h-4 w-4 mr-2 text-gray-400" />
+                        {leaveDateStr}
+                      </span>
                       <button 
                         onClick={() => handleRemoveLeave(leave.leave_date)}
                         className="text-red-600 hover:text-red-900 flex items-center text-sm"

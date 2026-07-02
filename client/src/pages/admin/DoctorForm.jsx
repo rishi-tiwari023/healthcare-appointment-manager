@@ -6,6 +6,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import { adminApi } from '../../api/admin';
 import { AlertCircle, ArrowLeft } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 const baseSchema = z.object({
   first_name: z.string().min(2, 'First name is required'),
@@ -85,6 +86,7 @@ const DoctorForm = () => {
           }));
 
         } catch (err) {
+          toast.error('Failed to load doctor details');
           setApiError('Failed to load doctor details.');
         } finally {
           setIsFetching(false);
@@ -130,16 +132,19 @@ const DoctorForm = () => {
           slot_duration_minutes: data.slot_duration_minutes,
         };
         await adminApi.updateDoctor(id, updateData);
+        toast.success('Doctor updated successfully!');
       } else {
         const newDoctor = await adminApi.createDoctor(data);
         doctorId = newDoctor.data.data.id;
+        toast.success('Doctor created successfully!');
       }
 
       await adminApi.setDoctorAvailability(doctorId, finalSchedules);
       
       navigate('/admin/doctors');
     } catch (err) {
-      setApiError(err.response?.data?.message || 'An error occurred. Please try again.');
+      toast.error(err.response?.data?.message || 'Failed to save doctor');
+      setApiError(err.response?.data?.message || 'Failed to save doctor.');
     } finally {
       setIsLoading(false);
     }

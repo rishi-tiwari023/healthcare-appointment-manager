@@ -2,7 +2,9 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import { patientApi } from '../../api/patient';
-import { Search, User, Filter, MapPin, Star } from 'lucide-react';
+import { Search, User, Filter, AlertCircle, Clock } from 'lucide-react';
+import { toast } from 'react-hot-toast';
+import { SkeletonCard } from '../../components/ui/Skeleton';
 
 const SearchDoctors = () => {
   const [doctors, setDoctors] = useState([]);
@@ -24,7 +26,8 @@ const SearchDoctors = () => {
         const res = await patientApi.getDoctors();
         setDoctors(res.data?.data || []);
       } catch (err) {
-        setError('Failed to load doctors.');
+        toast.error('Failed to load doctors list');
+        setError('Failed to load doctors list');
       } finally {
         setIsLoading(false);
       }
@@ -86,10 +89,10 @@ const SearchDoctors = () => {
       </div>
 
       {isLoading ? (
-        <div className="grid gap-6 lg:grid-cols-2">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="animate-pulse bg-white p-6 rounded-lg shadow-sm border border-gray-100 h-48"></div>
-          ))}
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
         </div>
       ) : error ? (
         <div className="bg-red-50 p-4 rounded-md">

@@ -3,6 +3,8 @@ import DashboardLayout from '../../components/DashboardLayout';
 import { patientApi } from '../../api/patient';
 import { FileText, Stethoscope, Pill, Calendar, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import { format } from 'date-fns';
+import { toast } from 'react-hot-toast';
+import { SkeletonCard } from '../../components/ui/Skeleton';
 
 const AppointmentHistory = () => {
   const [history, setHistory] = useState([]);
@@ -25,7 +27,8 @@ const AppointmentHistory = () => {
         const historyRes = await patientApi.getPatientHistory(patientId);
         setHistory(historyRes.data.data || []);
       } catch (err) {
-        setError('Failed to load appointment history.');
+        toast.error('Failed to load history');
+        setError('Failed to load history.');
       } finally {
         setIsLoading(false);
       }
@@ -47,10 +50,9 @@ const AppointmentHistory = () => {
       </div>
 
       {isLoading ? (
-        <div className="space-y-4">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="animate-pulse bg-white p-6 rounded-lg shadow-sm border border-gray-100 h-24"></div>
-          ))}
+        <div className="space-y-6">
+          <SkeletonCard />
+          <SkeletonCard />
         </div>
       ) : error ? (
         <div className="bg-red-50 p-4 rounded-md">
