@@ -9,7 +9,7 @@ const initCronJobs = () => {
   // 1. Process Email Queue (Every minute)
   cron.schedule('* * * * *', async () => {
     try {
-      await emailQueueService.processQueue();
+      await emailQueueService.processEmailQueue();
     } catch (error) {
       console.error('Cron Job Error: Email Queue Processor', error);
     }
