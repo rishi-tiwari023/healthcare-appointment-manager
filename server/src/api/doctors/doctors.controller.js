@@ -20,6 +20,15 @@ class DoctorsController {
     }
   }
 
+  async getMe(req, res, next) {
+    try {
+      const doctor = await doctorsService.getDoctorByUserId(req.user.id);
+      return successResponse(res, 200, 'Doctor profile fetched successfully', doctor);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async createDoctor(req, res, next) {
     try {
       const doctor = await doctorsService.createDoctor(req.body);

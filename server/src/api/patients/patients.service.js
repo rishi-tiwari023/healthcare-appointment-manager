@@ -89,12 +89,18 @@ class PatientsService {
         d.last_name AS doctor_last_name,
         d.specialisation AS doctor_specialisation,
         s.raw_symptoms,
-        ai.patient_friendly_summary,
+        aipre.urgency_level,
+        aipre.chief_complaint,
+        aipre.suggested_questions,
+        aipost.patient_friendly_summary,
+        aipost.medication_schedule,
+        aipost.follow_up_instructions,
         pr.clinical_notes AS prescription_notes
       FROM appointments a
       JOIN doctors d ON a.doctor_id = d.id
       LEFT JOIN symptoms s ON a.id = s.appointment_id
-      LEFT JOIN ai_summaries ai ON a.id = ai.appointment_id AND ai.summary_type = 'post_visit'
+      LEFT JOIN ai_summaries aipre ON a.id = aipre.appointment_id AND aipre.summary_type = 'pre_visit'
+      LEFT JOIN ai_summaries aipost ON a.id = aipost.appointment_id AND aipost.summary_type = 'post_visit'
       LEFT JOIN prescriptions pr ON a.id = pr.appointment_id
       WHERE a.patient_id = $1
       ORDER BY a.appointment_date DESC, a.created_at DESC

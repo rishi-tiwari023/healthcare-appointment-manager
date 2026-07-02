@@ -18,6 +18,15 @@ const isOwnerOrAdmin = (req, res, next) => {
 
 // Public / Authenticated Read Operations
 router.get('/', authenticate, doctorsController.getAllDoctors);
+
+// Get current logged-in doctor profile
+router.get(
+  '/me',
+  authenticate,
+  authorize('doctor'),
+  doctorsController.getMe
+);
+
 router.get('/:id', authenticate, doctorsController.getDoctorById);
 router.get('/:id/availability', authenticate, doctorsController.getAvailability);
 

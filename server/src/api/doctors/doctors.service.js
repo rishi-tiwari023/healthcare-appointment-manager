@@ -7,7 +7,7 @@ const calendarService = require('../calendar/calendar.service');
 class DoctorsService {
   async getAllDoctors() {
     const result = await db.query(
-      `SELECT d.id, d.user_id, d.first_name, d.last_name, d.specialisation, d.slot_duration_minutes, d.phone_number, u.email, u.profile_image_url
+      `SELECT d.id, d.user_id, d.first_name, d.last_name, d.specialisation, d.slot_duration_minutes, u.email, u.profile_image_url
        FROM doctors d
        JOIN users u ON d.user_id = u.id`
     );
@@ -25,6 +25,21 @@ class DoctorsService {
     
     if (result.rowCount === 0) {
       throw { statusCode: 404, message: 'Doctor not found' };
+    }
+    return result.rows[0];
+  }
+
+  async getDoctorByUserId(userId) {
+    const result = await db.query(
+      `SELECT d.id, d.user_id, d.first_name, d.last_name, d.specialisation, d.slot_duration_minutes, u.email, u.profile_image_url
+       FROM doctors d
+       JOIN users u ON d.user_id = u.id
+       WHERE d.user_id = $1`,
+      [userId]
+    );
+    
+    if (result.rowCount === 0) {
+      throw { statusCode: 404, message: 'Doctor profile not found' };
     }
     return result.rows[0];
   }

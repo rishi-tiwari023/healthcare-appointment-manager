@@ -72,8 +72,8 @@ class AIService {
     const summaryData = await this.executeWithRetryAndFallback(promptText, schemaPrompt);
 
     await db.query(
-      `INSERT INTO ai_summaries (appointment_id, summary_type, content) VALUES ($1, 'pre_visit', $2) RETURNING *`,
-      [appointmentId, JSON.stringify(summaryData)]
+      `INSERT INTO ai_summaries (appointment_id, summary_type, urgency_level, chief_complaint, suggested_questions) VALUES ($1, 'pre_visit', $2, $3, $4) RETURNING *`,
+      [appointmentId, summaryData.urgency, summaryData.chief_complaint, JSON.stringify(summaryData.suggested_questions_for_doctor)]
     );
 
     return summaryData;
@@ -91,8 +91,13 @@ class AIService {
     const summaryData = await this.executeWithRetryAndFallback(promptText, schemaPrompt);
 
     await db.query(
-      `INSERT INTO ai_summaries (appointment_id, summary_type, content) VALUES ($1, 'post_visit', $2) RETURNING *`,
-      [appointmentId, JSON.stringify(summaryData)]
+      `INSERT INTO ai_summaries (appointment_id, summary_type, patient_friendly_summary, medication_schedule, follow_up_instructions) VALUES ($1, 'post_visit', $2, $3, $4) RETURNING *`,
+      [appointmentId, summaryData.patient_friendly_summary, JSON.stringify(summaryData.medication_instructions), summaryData.follow_up_advice]
+    );
+
+    await db.query(
+      `UPDATE appointments SET status = 'completed' WHERE id = $1`,
+      [appointmentId]
     );
 
     return summaryData;

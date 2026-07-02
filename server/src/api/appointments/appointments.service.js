@@ -263,7 +263,7 @@ class AppointmentsService {
     let query = `
       SELECT 
         a.id, a.appointment_date, a.slot_time, a.status,
-        p.first_name AS patient_first_name, p.last_name AS patient_last_name,
+        p.id AS patient_id, p.first_name AS patient_first_name, p.last_name AS patient_last_name,
         d.first_name AS doctor_first_name, d.last_name AS doctor_last_name, d.specialisation
       FROM appointments a
       JOIN patients p ON a.patient_id = p.id
