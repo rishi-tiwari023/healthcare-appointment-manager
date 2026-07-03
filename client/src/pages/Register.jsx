@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate, Link } from 'react-router-dom';
 import { authApi } from '../api/auth';
-import { Activity, User, Mail, Lock, AlertCircle, Phone, Calendar, Eye, EyeOff } from 'lucide-react';
+import { User, Mail, Lock, AlertCircle, Phone, Calendar, Eye, EyeOff } from 'lucide-react';
 import images from '../config/images.json';
 
 const registerSchema = z.object({
@@ -41,7 +41,7 @@ const Register = () => {
     setIsLoading(true);
     setApiError('');
     try {
-      const { confirmPassword, firstName, lastName, dateOfBirth, phone, ...rest } = data;
+      const { confirmPassword: _c, ...rest } = data;
       
       const payload = {
         ...rest,

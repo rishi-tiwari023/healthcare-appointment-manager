@@ -23,7 +23,7 @@ const CalendarConnect = () => {
     }
 
     checkStatus();
-  }, []);
+  }, [searchParams, setSearchParams]);
 
   const checkStatus = async () => {
     try {
@@ -43,7 +43,7 @@ const CalendarConnect = () => {
       if (res.data?.url) {
         window.location.href = res.data.url;
       }
-    } catch (error) {
+    } catch {
       toast.error('Failed to generate connection URL');
     }
   };
@@ -58,7 +58,7 @@ const CalendarConnect = () => {
       await calendarApi.disconnect();
       setIsConnected(false);
       toast.success('Google Calendar disconnected');
-    } catch (error) {
+    } catch {
       toast.error('Failed to disconnect calendar');
     } finally {
       setIsLoading(false);
