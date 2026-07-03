@@ -7,14 +7,15 @@ import { ArrowLeft, User, Activity, FileText, CheckCircle, Plus, Trash2, Clock, 
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { toast } from 'react-hot-toast';
 
 const prescriptionSchema = z.object({
-  clinical_notes: z.string().min(10, 'Clinical notes must be at least 10 characters'),
+  clinical_notes: z.string().min(1, 'Required'),
   medications: z.array(z.object({
-    medication_name: z.string().min(2, 'Required'),
-    dosage: z.string().min(2, 'Required'),
-    frequency: z.string().min(2, 'Required'),
-    duration_days: z.number().min(1, 'Required')
+    medication_name: z.string().min(1, 'Required'),
+    dosage: z.string().min(1, 'Required'),
+    frequency: z.string().min(1, 'Required'),
+    duration_days: z.coerce.number().min(1, 'Required')
   })).optional()
 });
 
@@ -51,7 +52,8 @@ const AppointmentVisit = () => {
       try {
         // Find appointment
         const apptsRes = await doctorApi.getAppointments();
-        const currentAppt = apptsRes.data.data.find(a => a.id === appointmentId);
+        const appointmentsArray = apptsRes.data.data?.data || [];
+        const currentAppt = appointmentsArray.find(a => a.id === appointmentId);
         
         if (!currentAppt) {
           setError('Appointment not found');
@@ -65,7 +67,12 @@ const AppointmentVisit = () => {
         const historyRes = await doctorApi.getPatientHistory(currentAppt.patient_id);
         setPatientHistory(historyRes.data.data || []);
       } catch (err) {
-        setError('Failed to load visit details');
+        if (err.response?.status === 429) {
+          setError('Too many requests. Please wait a moment and try again.');
+          toast.error('Too many requests, please try again later.');
+        } else {
+          setError(`Failed to load visit details: ${err.message} - ${JSON.stringify(err.response?.data || {})}`);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -93,6 +100,8 @@ const AppointmentVisit = () => {
           medications: data.medications
         });
       }
+      // 3. Mark appointment as complete
+      await doctorApi.completeAppointment(appointmentId);
 
       setSuccess(true);
       setTimeout(() => navigate('/doctor/dashboard'), 2000);
@@ -189,7 +198,7 @@ const AppointmentVisit = () => {
                           try {
                             const qs = JSON.parse(currentVisitHistory.suggested_questions);
                             return qs.map((q, i) => <li key={i}>{q}</li>);
-                          } catch(e) {
+                          } catch {
                             return <li>{currentVisitHistory.suggested_questions}</li>;
                           }
                         })()}

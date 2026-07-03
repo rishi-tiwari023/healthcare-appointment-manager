@@ -53,4 +53,12 @@ router.put(
   appointmentsController.rescheduleAppointment
 );
 
+// Complete an appointment (Doctor only)
+router.put(
+  '/:id/complete', 
+  authenticate, 
+  authorize('doctor'),
+  appointmentsController.completeAppointment
+);
+
 module.exports = router;

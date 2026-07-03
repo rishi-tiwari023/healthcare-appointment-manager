@@ -20,4 +20,8 @@ export const doctorApi = {
   createPrescription: async (appointmentId, prescriptionData) => {
     return await axiosInstance.post(`/appointments/${appointmentId}/prescriptions`, prescriptionData);
   },
+
+  completeAppointment: async (appointmentId) => {
+    return await axiosInstance.put(`/appointments/${appointmentId}/complete`);
+  }
 };

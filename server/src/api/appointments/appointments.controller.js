@@ -32,8 +32,10 @@ class AppointmentsController {
 
   async getAppointments(req, res, next) {
     try {
-      const appointments = await appointmentsService.getAppointments(req.user.id, req.user.role);
-      return successResponse(res, 200, 'Appointments fetched successfully', appointments);
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+      const result = await appointmentsService.getAppointments(req.user.id, req.user.role, page, limit);
+      return successResponse(res, 200, 'Appointments fetched successfully', result);
     } catch (error) {
       next(error);
     }
@@ -52,6 +54,15 @@ class AppointmentsController {
     try {
       const appointment = await appointmentsService.rescheduleAppointment(req.params.id, req.user.id, req.user.role, req.body);
       return successResponse(res, 200, 'Appointment rescheduled successfully', appointment);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async completeAppointment(req, res, next) {
+    try {
+      const appointment = await appointmentsService.completeAppointment(req.params.id, req.user.id);
+      return successResponse(res, 200, 'Appointment marked as complete', appointment);
     } catch (error) {
       next(error);
     }

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import { patientApi } from '../../api/patient';
-import { Calendar, Clock, MapPin, User, ChevronRight } from 'lucide-react';
+import { Calendar, Clock, User } from 'lucide-react';
 import { format, isAfter, isToday } from 'date-fns';
 import { toast } from 'react-hot-toast';
 import { SkeletonCard } from '../../components/ui/Skeleton';
@@ -24,8 +24,9 @@ const PatientDashboard = () => {
       try {
         const res = await patientApi.getAppointments();
         const now = new Date();
-        const upcoming = (res.data?.data || []).filter(app => {
-          if (app.status === 'cancelled') return false;
+        const appointmentsArray = res.data?.data?.data || [];
+        const upcoming = appointmentsArray.filter(app => {
+          if (app.status !== 'booked') return false;
           const appDate = new Date(app.appointment_date);
           const [hours, minutes] = app.slot_time.split(':');
           appDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
@@ -34,7 +35,7 @@ const PatientDashboard = () => {
         });
         upcoming.sort((a, b) => a.parsedDate - b.parsedDate);
         setAppointments(upcoming);
-      } catch (err) {
+      } catch {
         toast.error('Failed to load appointments');
         setError('Failed to load appointments.');
       } finally {

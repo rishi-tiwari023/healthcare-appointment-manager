@@ -3,9 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { doctorApi } from '../../api/doctor';
 import DashboardLayout from '../../components/DashboardLayout';
-import { format, isToday, isFuture, isPast } from 'date-fns';
+import { format, isToday } from 'date-fns';
 import { Clock, Calendar as CalendarIcon, User, ChevronRight, Activity } from 'lucide-react';
 import CalendarConnect from '../../components/CalendarConnect';
+import { toast } from 'react-hot-toast';
 
 const DoctorDashboard = () => {
   const { user } = useAuth();
@@ -28,9 +29,14 @@ const DoctorDashboard = () => {
         ]);
         
         setProfile(profileRes.data.data);
-        setAppointments(apptsRes.data.data || []);
+        setAppointments(apptsRes.data.data?.data || []);
       } catch (err) {
-        setError('Failed to load dashboard data');
+        if (err.response?.status === 429) {
+          setError('Too many requests. Please wait a moment and try again.');
+          toast.error('Too many requests, please try again later.');
+        } else {
+          setError(`Failed to load dashboard data: ${err.message} - ${JSON.stringify(err.response?.data || {})}`);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -39,13 +45,11 @@ const DoctorDashboard = () => {
   }, []);
 
   const todayAppointments = appointments.filter(app => {
-    const appDate = new Date(app.appointment_date);
-    return isToday(appDate) && app.status !== 'cancelled';
+    return app.status === 'booked' && isToday(new Date(app.appointment_date));
   }).sort((a, b) => a.slot_time.localeCompare(b.slot_time));
 
   const upcomingAppointments = appointments.filter(app => {
-    const appDate = new Date(app.appointment_date);
-    return isFuture(appDate) && !isToday(appDate) && app.status !== 'cancelled';
+    return app.status === 'booked' && !isToday(new Date(app.appointment_date)) && new Date(app.appointment_date) > new Date();
   }).sort((a, b) => new Date(`${a.appointment_date}T${a.slot_time}Z`) - new Date(`${b.appointment_date}T${b.slot_time}Z`));
 
   return (

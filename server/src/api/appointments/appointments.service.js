@@ -84,7 +84,19 @@ class AppointmentsService {
     const unavailableSlots = [...bookedSlots, ...heldSlots];
 
     // 5. Filter out booked and held slots
-    const availableSlots = allGeneratedSlots.filter(slot => !unavailableSlots.includes(slot));
+    let availableSlots = allGeneratedSlots.filter(slot => !unavailableSlots.includes(slot));
+    
+    // 6. If date is today, filter out past slots
+    const today = new Date().toISOString().split('T')[0];
+    if (date === today) {
+      const now = new Date();
+      // Calculate current time in minutes since midnight
+      const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
+      availableSlots = availableSlots.filter(slot => {
+        const [h, m] = slot.split(':').map(Number);
+        return (h * 60 + m) > currentTotalMinutes;
+      });
+    }
     
     return availableSlots;
   }
@@ -258,13 +270,8 @@ class AppointmentsService {
     }
   }
 
-  async getAppointments(userId, role) {
-    // This query is dynamic based on role
-    let query = `
-      SELECT 
-        a.id, a.appointment_date, a.slot_time, a.status,
-        p.id AS patient_id, p.first_name AS patient_first_name, p.last_name AS patient_last_name,
-        d.id AS doctor_id, d.first_name AS doctor_first_name, d.last_name AS doctor_last_name, d.specialisation
+  async getAppointments(userId, role, page = 1, limit = 10) {
+    let baseQuery = `
       FROM appointments a
       JOIN patients p ON a.patient_id = p.id
       JOIN doctors d ON a.doctor_id = d.id
@@ -272,17 +279,42 @@ class AppointmentsService {
     const params = [];
 
     if (role === 'patient') {
-      query += ` WHERE p.user_id = $1`;
+      baseQuery += ` WHERE p.user_id = $1`;
       params.push(userId);
     } else if (role === 'doctor') {
-      query += ` WHERE d.user_id = $1`;
+      baseQuery += ` WHERE d.user_id = $1`;
       params.push(userId);
     }
 
-    query += ` ORDER BY a.appointment_date DESC, a.slot_time DESC`;
+    const countQuery = `SELECT COUNT(*) ${baseQuery}`;
+    const countResult = await db.query(countQuery, params);
+    const total = parseInt(countResult.rows[0].count, 10);
+    const totalPages = Math.ceil(total / limit);
+
+    const offset = (page - 1) * limit;
+    
+    let query = `
+      SELECT 
+        a.id, a.appointment_date, a.slot_time, a.status,
+        p.id AS patient_id, p.first_name AS patient_first_name, p.last_name AS patient_last_name,
+        d.id AS doctor_id, d.first_name AS doctor_first_name, d.last_name AS doctor_last_name, d.specialisation
+      ${baseQuery}
+      ORDER BY a.appointment_date DESC, a.slot_time DESC
+      LIMIT $${params.length + 1} OFFSET $${params.length + 2}
+    `;
+
+    params.push(limit, offset);
 
     const result = await db.query(query, params);
-    return result.rows;
+    return {
+      data: result.rows,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages
+      }
+    };
   }
 
   async cancelAppointment(appointmentId, userId, role) {
@@ -521,6 +553,28 @@ class AppointmentsService {
     }
     
     return result.rowCount;
+  }
+
+  async completeAppointment(appointmentId, doctorUserId) {
+    const doctorResult = await db.query('SELECT id FROM doctors WHERE user_id = $1', [doctorUserId]);
+    if (doctorResult.rowCount === 0) {
+      throw { statusCode: 404, message: 'Doctor profile not found' };
+    }
+    const doctorId = doctorResult.rows[0].id;
+
+    const apptResult = await db.query('SELECT * FROM appointments WHERE id = $1 AND doctor_id = $2', [appointmentId, doctorId]);
+    if (apptResult.rowCount === 0) {
+      throw { statusCode: 404, message: 'Appointment not found or unauthorized' };
+    }
+
+    const result = await db.query(
+      `UPDATE appointments 
+       SET status = 'completed', updated_at = CURRENT_TIMESTAMP 
+       WHERE id = $1 RETURNING *`,
+      [appointmentId]
+    );
+
+    return result.rows[0];
   }
 }
 
