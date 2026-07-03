@@ -1,16 +1,45 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { LogOut, Activity, Menu, X } from 'lucide-react';
+import { LogOut, Activity, Menu, X, User as UserIcon, Camera } from 'lucide-react';
+import { authApi } from '../api/auth';
+import { toast } from 'react-hot-toast';
 
 const DashboardLayout = ({ title, children, roleColor, navigation = [] }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef(null);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
+  };
+
+  const handleImageClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size must be less than 5MB');
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      const res = await authApi.uploadProfileImage(file);
+      updateUser({ profile_image_url: res.data.profile_image_url });
+      toast.success('Profile picture updated!');
+    } catch (error) {
+      toast.error('Failed to upload profile picture');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const bgColors = {
@@ -48,7 +77,31 @@ const DashboardLayout = ({ title, children, roleColor, navigation = [] }) => {
             </div>
             
             <div className="flex items-center space-x-4">
-              <span className="text-sm hidden lg:block text-white/90">Welcome, {user?.first_name}</span>
+              <div className="hidden lg:flex items-center space-x-3">
+                <span className="text-sm text-white/90">Welcome, {user?.first_name}</span>
+                <div 
+                  className="relative h-9 w-9 rounded-full bg-white/20 flex items-center justify-center cursor-pointer group overflow-hidden border border-white/30"
+                  onClick={handleImageClick}
+                >
+                  {isUploading ? (
+                    <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                  ) : user?.profile_image_url ? (
+                    <img src={user.profile_image_url} alt="Profile" className="h-full w-full object-cover" />
+                  ) : (
+                    <UserIcon size={18} className="text-white/80" />
+                  )}
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Camera size={14} className="text-white" />
+                  </div>
+                </div>
+                <input 
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleFileChange}
+                />
+              </div>
               <button
                 onClick={handleLogout}
                 className="hidden md:flex items-center space-x-1 text-sm bg-white/20 hover:bg-white/30 text-white px-3 py-2 rounded-md transition"

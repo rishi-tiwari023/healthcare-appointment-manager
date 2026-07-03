@@ -19,5 +19,16 @@ export const authApi = {
   getMe: async () => {
     const response = await axiosInstance.get('/auth/me');
     return response.data;
+  },
+
+  uploadProfileImage: async (file) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    const response = await axiosInstance.post('/users/profile-image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response.data;
   }
 };
