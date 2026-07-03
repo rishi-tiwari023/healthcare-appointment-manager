@@ -12,6 +12,8 @@ CREATE TABLE IF NOT EXISTS users (
     last_name VARCHAR(100),
     role user_role NOT NULL,
     profile_image_url VARCHAR(1024), -- Cloudinary URL
+    reset_password_token VARCHAR(255),
+    reset_password_expires TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

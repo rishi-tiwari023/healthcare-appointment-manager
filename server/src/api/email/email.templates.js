@@ -84,6 +84,21 @@ const getMedicationReminderTemplate = (patientName, medicationName) => {
   `;
 };
 
+const getPasswordResetTemplate = (resetLink) => {
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+      <h2 style="color: #FF5722;">Password Reset Request</h2>
+      <p>You requested a password reset for your account.</p>
+      <p>Please click the link below to reset your password. This link is valid for 1 hour.</p>
+      <div style="margin: 20px 0;">
+        <a href="${resetLink}" style="background-color: #FF5722; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Reset Password</a>
+      </div>
+      <p>If you did not request this, please ignore this email.</p>
+      <p>Best Regards,<br>Healthcare Clinic</p>
+    </div>
+  `;
+};
+
 module.exports = {
   getBookingConfirmationTemplate,
   getReminderTemplate,
@@ -91,4 +106,5 @@ module.exports = {
   getLeaveNotificationTemplate,
   getRescheduleTemplate,
   getMedicationReminderTemplate,
+  getPasswordResetTemplate,
 };

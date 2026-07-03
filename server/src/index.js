@@ -4,7 +4,7 @@ const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '../../.env') });
+require('dotenv').config({ path: path.join(__dirname, '../.env'), override: true });
 
 const authRoutes = require('./api/auth/auth.routes');
 const doctorsRoutes = require('./api/doctors/doctors.routes');
@@ -13,6 +13,8 @@ const appointmentsRoutes = require('./api/appointments/appointments.routes');
 const aiRoutes = require('./api/ai/ai.routes');
 const calendarRoutes = require('./api/calendar/calendar.routes');
 const prescriptionsRoutes = require('./api/prescriptions/prescriptions.routes');
+const usersRoutes = require('./api/users/users.routes');
+const analyticsRoutes = require('./api/analytics/analytics.routes');
 const globalErrorHandler = require('./common/middleware/error.middleware');
 const initCronJobs = require('./jobs/cron');
 
@@ -40,6 +42,8 @@ app.use('/api/patients', patientsRoutes);
 app.use('/api/appointments', appointmentsRoutes);
 app.use('/api/appointments/:appointmentId', aiRoutes);
 app.use('/api/calendar', calendarRoutes);
+app.use('/api/users', usersRoutes);
+app.use('/api/analytics', analyticsRoutes);
 app.use('/api', prescriptionsRoutes);
 
 app.get('/health', (req, res) => {

@@ -5,13 +5,30 @@ const { getLeaveNotificationTemplate } = require('../email/email.templates');
 const calendarService = require('../calendar/calendar.service');
 
 class DoctorsService {
-  async getAllDoctors() {
+  async getAllDoctors(page = 1, limit = 10) {
+    const countResult = await db.query('SELECT COUNT(*) FROM doctors');
+    const total = parseInt(countResult.rows[0].count, 10);
+    const totalPages = Math.ceil(total / limit);
+    const offset = (page - 1) * limit;
+
     const result = await db.query(
       `SELECT d.id, d.user_id, d.first_name, d.last_name, d.specialisation, d.slot_duration_minutes, u.email, u.profile_image_url
        FROM doctors d
-       JOIN users u ON d.user_id = u.id`
+       JOIN users u ON d.user_id = u.id
+       ORDER BY d.created_at DESC
+       LIMIT $1 OFFSET $2`,
+      [limit, offset]
     );
-    return result.rows;
+    
+    return {
+      data: result.rows,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages
+      }
+    };
   }
 
   async getDoctorById(id) {

@@ -66,6 +66,54 @@ class AuthService {
     delete user.password_hash;
     return { user, accessToken, refreshToken };
   }
+
+  async forgotPassword(email) {
+    const crypto = require('crypto');
+    const { enqueueEmail } = require('../email/emailQueue.service');
+    const { getPasswordResetTemplate } = require('../email/email.templates');
+
+    const userResult = await db.query('SELECT id, email FROM users WHERE email = $1', [email]);
+    if (userResult.rowCount === 0) {
+      return;
+    }
+
+    const user = userResult.rows[0];
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+    
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 1);
+
+    await db.query(
+      'UPDATE users SET reset_password_token = $1, reset_password_expires = $2 WHERE id = $3',
+      [resetTokenHash, expiresAt, user.id]
+    );
+
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+    await enqueueEmail(user.email, 'Password Reset Request', getPasswordResetTemplate(resetUrl));
+  }
+
+  async resetPassword(token, newPassword) {
+    const crypto = require('crypto');
+    const resetTokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+    const userResult = await db.query(
+      'SELECT id FROM users WHERE reset_password_token = $1 AND reset_password_expires > CURRENT_TIMESTAMP',
+      [resetTokenHash]
+    );
+
+    if (userResult.rowCount === 0) {
+      throw { statusCode: 400, message: 'Invalid or expired password reset token' };
+    }
+
+    const user = userResult.rows[0];
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+
+    await db.query(
+      'UPDATE users SET password_hash = $1, reset_password_token = NULL, reset_password_expires = NULL WHERE id = $2',
+      [passwordHash, user.id]
+    );
+  }
 }
 
 module.exports = new AuthService();

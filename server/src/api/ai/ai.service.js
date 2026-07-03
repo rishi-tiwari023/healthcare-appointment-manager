@@ -4,8 +4,24 @@ const db = require('../../db');
 
 class AIService {
   constructor() {
-    this.geminiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-    this.openAiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    this._geminiClient = null;
+    this._openAiClient = null;
+  }
+
+  get geminiClient() {
+    if (!this._geminiClient) {
+      const apiKey = process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.trim() : undefined;
+      this._geminiClient = new GoogleGenAI({ apiKey });
+    }
+    return this._geminiClient;
+  }
+
+  get openAiClient() {
+    if (!this._openAiClient) {
+      const apiKey = process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.trim() : undefined;
+      this._openAiClient = new OpenAI({ apiKey });
+    }
+    return this._openAiClient;
   }
 
   async executeWithRetryAndFallback(promptText, schemaPrompt, retries = 3) {
@@ -14,15 +30,16 @@ class AIService {
     // 1. Try Gemini
     for (let i = 0; i < retries; i++) {
       try {
-        const response = await this.geminiClient.models.generateContent({
-          model: 'gemini-1.5-pro',
-          contents: promptText + '\\n\\n' + schemaPrompt,
-          config: {
-            responseMimeType: 'application/json',
-          }
+        const interaction = await this.geminiClient.interactions.create({
+          model: process.env.GEMINI_MODEL,
+          input: promptText + '\\n\\n' + schemaPrompt,
         });
-        
-        return JSON.parse(response.text);
+        let responseText = interaction.output_text;
+        const jsonMatch = responseText.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+        if (jsonMatch) {
+          responseText = jsonMatch[0];
+        }
+        return JSON.parse(responseText);
       } catch (error) {
         lastError = error;
         console.warn(`Gemini attempt ${i + 1} failed: ${error.message}`);
@@ -36,7 +53,7 @@ class AIService {
     for (let i = 0; i < retries; i++) {
       try {
         const response = await this.openAiClient.chat.completions.create({
-          model: 'gpt-4o',
+          model: process.env.OPENAI_MODEL,
           messages: [
             { role: 'system', content: 'You are a helpful medical AI assistant. Always return strict JSON.' },
             { role: 'user', content: promptText + '\\n\\n' + schemaPrompt }
@@ -44,7 +61,12 @@ class AIService {
           response_format: { type: 'json_object' }
         });
 
-        return JSON.parse(response.choices[0].message.content);
+        let responseText = response.choices[0].message.content;
+        const jsonMatch = responseText.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+        if (jsonMatch) {
+          responseText = jsonMatch[0];
+        }
+        return JSON.parse(responseText);
       } catch (error) {
         lastError = error;
         console.warn(`OpenAI attempt ${i + 1} failed: ${error.message}`);

@@ -4,8 +4,10 @@ const { successResponse } = require('../../common/utils/response');
 class DoctorsController {
   async getAllDoctors(req, res, next) {
     try {
-      const doctors = await doctorsService.getAllDoctors();
-      return successResponse(res, 200, 'Doctors fetched successfully', doctors);
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+      const result = await doctorsService.getAllDoctors(page, limit);
+      return successResponse(res, 200, 'Doctors fetched successfully', result);
     } catch (error) {
       next(error);
     }
