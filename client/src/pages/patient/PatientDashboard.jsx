@@ -6,6 +6,7 @@ import { Calendar, Clock, MapPin, User, ChevronRight } from 'lucide-react';
 import { format, isAfter, isToday } from 'date-fns';
 import { toast } from 'react-hot-toast';
 import { SkeletonCard } from '../../components/ui/Skeleton';
+import CalendarConnect from '../../components/CalendarConnect';
 
 const PatientDashboard = () => {
   const [appointments, setAppointments] = useState([]);
@@ -25,10 +26,13 @@ const PatientDashboard = () => {
         const now = new Date();
         const upcoming = (res.data?.data || []).filter(app => {
           if (app.status === 'cancelled') return false;
-          const appDateTime = new Date(`${app.appointment_date}T${app.slot_time}Z`);
-          return isAfter(appDateTime, now);
+          const appDate = new Date(app.appointment_date);
+          const [hours, minutes] = app.slot_time.split(':');
+          appDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+          app.parsedDate = appDate;
+          return isAfter(appDate, now);
         });
-        upcoming.sort((a, b) => new Date(`${a.appointment_date}T${a.slot_time}Z`) - new Date(`${b.appointment_date}T${b.slot_time}Z`));
+        upcoming.sort((a, b) => a.parsedDate - b.parsedDate);
         setAppointments(upcoming);
       } catch (err) {
         toast.error('Failed to load appointments');
@@ -55,11 +59,16 @@ const PatientDashboard = () => {
 
   return (
     <DashboardLayout title="Patient Portal" roleColor="emerald" navigation={navigation}>
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900">Welcome Back!</h2>
-        <p className="mt-1 text-sm text-gray-500">
-          Manage your appointments and medical history from your dashboard.
-        </p>
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Welcome Back!</h2>
+          <p className="mt-1 text-sm text-gray-500">
+            Manage your appointments and medical history from your dashboard.
+          </p>
+        </div>
+        <div className="mt-4 sm:mt-0">
+          <CalendarConnect />
+        </div>
       </div>
 
       <div className="mb-6 flex justify-between items-center">

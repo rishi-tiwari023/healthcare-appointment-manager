@@ -52,6 +52,10 @@ class CalendarService {
     return result.rows[0].refresh_token;
   }
 
+  async deleteRefreshToken(userId) {
+    await db.query('DELETE FROM user_oauth_tokens WHERE user_id = $1', [userId]);
+  }
+
   async getCalendarClient(userId) {
     const refreshToken = await this.getRefreshToken(userId);
     if (!refreshToken) return null;

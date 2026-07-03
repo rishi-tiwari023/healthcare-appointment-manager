@@ -5,6 +5,7 @@ import { doctorApi } from '../../api/doctor';
 import DashboardLayout from '../../components/DashboardLayout';
 import { format, isToday, isFuture, isPast } from 'date-fns';
 import { Clock, Calendar as CalendarIcon, User, ChevronRight, Activity } from 'lucide-react';
+import CalendarConnect from '../../components/CalendarConnect';
 
 const DoctorDashboard = () => {
   const { user } = useAuth();
@@ -49,9 +50,14 @@ const DoctorDashboard = () => {
 
   return (
     <DashboardLayout title="Doctor Portal" roleColor="blue" navigation={navigation}>
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900">Welcome, Dr. {profile?.last_name || user?.email}</h2>
-        <p className="mt-1 text-sm text-gray-500">Here's your schedule for today.</p>
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Welcome, Dr. {profile?.last_name || user?.email}</h2>
+          <p className="mt-1 text-sm text-gray-500">Here's your schedule for today.</p>
+        </div>
+        <div className="mt-4 sm:mt-0">
+          <CalendarConnect />
+        </div>
       </div>
 
       {error && (
