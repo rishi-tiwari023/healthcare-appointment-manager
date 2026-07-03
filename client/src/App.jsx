@@ -2,6 +2,14 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import GuestRoute from './components/GuestRoute';
+import PublicLayout from './components/PublicLayout';
+import Home from './pages/Home';
+import Product from './pages/public/Product';
+import Features from './pages/public/Features';
+import Security from './pages/public/Security';
+import Privacy from './pages/public/Privacy';
+import Terms from './pages/public/Terms';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Unauthorized from './pages/Unauthorized';
@@ -25,9 +33,19 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           {/* Public Routes */}
-          <Route path="/" element={<Navigate to="/login" replace />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          <Route element={<PublicLayout />}>
+            <Route path="/" element={<Home />} />
+            <Route path="/product" element={<Product />} />
+            <Route path="/features" element={<Features />} />
+            <Route path="/security" element={<Security />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/terms" element={<Terms />} />
+          </Route>
+
+          <Route element={<GuestRoute />}>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+          </Route>
           <Route path="/unauthorized" element={<Unauthorized />} />
 
           {/* Protected Routes - Admin Only */}
