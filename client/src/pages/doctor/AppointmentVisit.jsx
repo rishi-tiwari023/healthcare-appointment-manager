@@ -33,7 +33,7 @@ const AppointmentVisit = () => {
     resolver: zodResolver(prescriptionSchema),
     defaultValues: {
       clinical_notes: '',
-      medications: [{ medication_name: '', dosage: '', frequency: '', duration_days: 7 }]
+      medications: []
     }
   });
 
@@ -87,8 +87,9 @@ const AppointmentVisit = () => {
       // 2. Submit Prescription
       if (data.medications && data.medications.length > 0 && data.medications[0].medication_name !== '') {
         await doctorApi.createPrescription(appointmentId, {
-          patient_id: appointment.patient_id,
-          clinical_notes: data.clinical_notes,
+          doctorId: appointment.doctor_id,
+          patientId: appointment.patient_id,
+          clinicalNotes: data.clinical_notes,
           medications: data.medications
         });
       }
