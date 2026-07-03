@@ -21,8 +21,8 @@ class AuthService {
 
       // 3. Create user
       const userResult = await client.query(
-        'INSERT INTO users (email, password_hash, role) VALUES ($1, $2, $3) RETURNING id, email, role',
-        [email, passwordHash, 'patient']
+        'INSERT INTO users (email, password_hash, first_name, last_name, role) VALUES ($1, $2, $3, $4, $5) RETURNING id, email, first_name, last_name, role',
+        [email, passwordHash, first_name, last_name, 'patient']
       );
       const user = userResult.rows[0];
 
@@ -48,7 +48,7 @@ class AuthService {
   }
 
   async login(email, password) {
-    const userResult = await db.query('SELECT id, email, password_hash, role FROM users WHERE email = $1', [email]);
+    const userResult = await db.query('SELECT id, email, first_name, last_name, password_hash, role FROM users WHERE email = $1', [email]);
     if (userResult.rowCount === 0) {
       throw { statusCode: 401, message: 'Invalid credentials' };
     }

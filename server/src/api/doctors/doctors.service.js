@@ -59,8 +59,8 @@ class DoctorsService {
       await client.query('BEGIN');
       
       const userResult = await client.query(
-        'INSERT INTO users (email, password_hash, role) VALUES ($1, $2, $3) RETURNING id, email',
-        [email, passwordHash, 'doctor']
+        'INSERT INTO users (email, password_hash, first_name, last_name, role) VALUES ($1, $2, $3, $4, $5) RETURNING id, email, first_name, last_name',
+        [email, passwordHash, first_name, last_name, 'doctor']
       );
       const user = userResult.rows[0];
 
