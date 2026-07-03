@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import { patientApi } from '../../api/patient';
 import { adminApi } from '../../api/admin';
@@ -39,7 +39,7 @@ const BookingFlow = () => {
       try {
         const res = await adminApi.getDoctorById(doctorId);
         setDoctor(res.data.data);
-      } catch (err) {
+      } catch {
         toast.error('Failed to load doctor details.');
         setError('Failed to load doctor details.');
       }
@@ -56,7 +56,7 @@ const BookingFlow = () => {
       try {
         const res = await patientApi.getAvailableSlots(doctorId, selectedDate);
         setAvailableSlots(res.data.data || []);
-      } catch (err) {
+      } catch {
         toast.error('Failed to load availability for this date.');
         setError('Failed to load availability for this date.');
       } finally {

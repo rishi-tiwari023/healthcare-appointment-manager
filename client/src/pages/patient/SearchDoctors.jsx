@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import { patientApi } from '../../api/patient';
-import { Search, User, Filter, AlertCircle, Clock, Star, MapPin } from 'lucide-react';
+import { Search, User, Filter, Star, MapPin } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { SkeletonCard } from '../../components/ui/Skeleton';
 
@@ -24,8 +24,8 @@ const SearchDoctors = () => {
     const fetchDoctors = async () => {
       try {
         const res = await patientApi.getDoctors();
-        setDoctors(res.data?.data || []);
-      } catch (err) {
+        setDoctors(res.data?.data?.data || []);
+      } catch {
         toast.error('Failed to load doctors list');
         setError('Failed to load doctors list');
       } finally {
@@ -139,11 +139,12 @@ const SearchDoctors = () => {
                   >
                     Book Appointment
                   </Link>
-                  <button
+                  <Link
+                    to={`/patient/doctors/${doctor.id}`}
                     className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
                   >
                     View Profile
-                  </button>
+                  </Link>
                 </div>
               </div>
             </div>

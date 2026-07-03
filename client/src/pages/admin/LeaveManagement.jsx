@@ -26,8 +26,8 @@ const LeaveManagement = () => {
     const fetchDoctors = async () => {
       try {
         const res = await adminApi.getAllDoctors();
-        setDoctors(res.data.data);
-      } catch (err) {
+        setDoctors(res.data.data?.data || []);
+      } catch {
         toast.error('Failed to load doctors list');
         setError('Failed to load doctors list');
       } finally {
@@ -51,7 +51,7 @@ const LeaveManagement = () => {
     try {
       const res = await adminApi.getDoctorLeave(doctorId);
       setLeaves(res.data.data);
-    } catch (err) {
+    } catch {
       toast.error('Failed to fetch doctor leaves');
       setError('Failed to fetch doctor leaves');
     } finally {
@@ -67,7 +67,7 @@ const LeaveManagement = () => {
     setError('');
     setMessage('');
     try {
-      const res = await adminApi.addDoctorLeave(selectedDoctorId, { leave_date: leaveDate });
+      await adminApi.addDoctorLeave(selectedDoctorId, { leave_date: leaveDate });
       toast.success('Leave marked successfully');
       setLeaveDate('');
       fetchLeaves(selectedDoctorId);

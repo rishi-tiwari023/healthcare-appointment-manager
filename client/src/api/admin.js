@@ -22,15 +22,7 @@ export const adminApi = {
   removeDoctorLeave: (id, date) => axiosInstance.delete(`/doctors/${id}/leave/${date}`),
   
   getDashboardMetrics: async () => {
-    try {
-      const doctorsRes = await axiosInstance.get('/doctors');
-      
-      return {
-        totalDoctors: doctorsRes.data.data.length,
-      };
-    } catch (error) {
-      console.error("Failed to fetch dashboard metrics", error);
-      throw error;
-    }
+    const response = await axiosInstance.get('/analytics/dashboard');
+    return response.data.data;
   }
 };

@@ -26,7 +26,7 @@ const AppointmentHistory = () => {
         
         const historyRes = await patientApi.getPatientHistory(patientId);
         setHistory(historyRes.data.data || []);
-      } catch (err) {
+      } catch {
         toast.error('Failed to load history');
         setError('Failed to load history.');
       } finally {
@@ -144,7 +144,7 @@ const AppointmentHistory = () => {
                               {(() => {
                                 let meds = record.medications;
                                 if (typeof meds === 'string') {
-                                  try { meds = JSON.parse(meds); } catch (e) { meds = []; }
+                                  try { meds = JSON.parse(meds); } catch { meds = []; }
                                 }
                                 if (meds && Array.isArray(meds) && meds.length > 0 && meds[0] !== null) {
                                   return (

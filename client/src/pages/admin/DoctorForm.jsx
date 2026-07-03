@@ -85,7 +85,7 @@ const DoctorForm = () => {
             return { ...p, active: false };
           }));
 
-        } catch (err) {
+        } catch {
           toast.error('Failed to load doctor details');
           setApiError('Failed to load doctor details.');
         } finally {

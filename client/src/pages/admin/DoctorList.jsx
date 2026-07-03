@@ -21,8 +21,8 @@ const DoctorList = () => {
     setIsLoading(true);
     try {
       const res = await adminApi.getAllDoctors();
-      setDoctors(res.data.data);
-    } catch (err) {
+      setDoctors(res.data.data?.data || []);
+    } catch {
       setError('Failed to fetch doctors list');
       toast.error('Failed to load doctors');
     } finally {
@@ -41,7 +41,7 @@ const DoctorList = () => {
       await adminApi.deleteDoctor(id);
       setDoctors(doctors.filter(d => d.id !== id));
       toast.success('Doctor deleted successfully');
-    } catch (err) {
+    } catch {
       toast.error('Failed to delete doctor');
     }
   };

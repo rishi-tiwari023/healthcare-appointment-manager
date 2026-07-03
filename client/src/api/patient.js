@@ -2,6 +2,7 @@ import axiosInstance from './axios';
 
 export const patientApi = {
   getDoctors: () => axiosInstance.get('/doctors'),
+  getDoctorById: (id) => axiosInstance.get(`/doctors/${id}`),
   
   getAppointments: () => axiosInstance.get('/appointments'),
   getAvailableSlots: (doctorId, date) => axiosInstance.get(`/appointments/slots`, { params: { doctor_id: doctorId, date } }),

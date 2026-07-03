@@ -19,6 +19,7 @@ import DoctorForm from './pages/admin/DoctorForm';
 import LeaveManagement from './pages/admin/LeaveManagement';
 import PatientDashboard from './pages/patient/PatientDashboard';
 import SearchDoctors from './pages/patient/SearchDoctors';
+import DoctorProfile from './pages/patient/DoctorProfile';
 import BookingFlow from './pages/patient/BookingFlow';
 import AppointmentHistory from './pages/patient/AppointmentHistory';
 import DoctorDashboard from './pages/doctor/DoctorDashboard';
@@ -67,6 +68,7 @@ export default function App() {
           <Route element={<ProtectedRoute allowedRoles={['patient']} />}>
             <Route path="/patient/dashboard" element={<PatientDashboard />} />
             <Route path="/patient/doctors" element={<SearchDoctors />} />
+            <Route path="/patient/doctors/:doctorId" element={<DoctorProfile />} />
             <Route path="/patient/book/:doctorId" element={<BookingFlow />} />
             <Route path="/patient/history" element={<AppointmentHistory />} />
           </Route>
