@@ -1,7 +1,7 @@
 const bcrypt = require('bcrypt');
 const { Pool } = require('pg');
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '../../.env') });
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 async function seedAdmin() {
   const pool = new Pool({

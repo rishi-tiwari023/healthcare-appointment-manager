@@ -1,5 +1,12 @@
 # Healthcare Appointment and Follow-up Manager
 
+![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
+![AWS](https://img.shields.io/badge/AWS-FF9900?style=for-the-badge&logo=amazonaws&logoColor=white)
+
+🚀 **Live Deployment:** [http://3.109.46.106](http://3.109.46.106) (Deployed on AWS EC2)
+
 A full-stack healthcare appointment platform with three role-based portals (Patient, Doctor, Admin). Patients can search doctors by specialisation, book time slots, and submit symptoms for AI-generated pre-visit summaries. Doctors manage appointments, write clinical notes, and issue prescriptions that trigger AI-generated post-visit summaries. Admins manage doctor profiles, working hours, and leave schedules. The system sends email notifications and syncs with Google Calendar for both parties.
 
 ## Table of Contents
@@ -506,26 +513,24 @@ npm run test
 
 ## Deployment
 
-### Frontend (Vercel)
+### Frontend (AWS EC2)
 
-1. Push your code to GitHub.
-2. Import the repository in [Vercel](https://vercel.com).
-3. Set the root directory to `client`.
-4. Set the framework preset to **Vite**.
-5. Add the environment variable: `VITE_API_URL=https://your-backend-url/api`
-6. Deploy.
+1. Clone the repository on your EC2 instance.
+2. Navigate to the `client` directory and install dependencies.
+3. Add the environment variable: `VITE_API_URL=/api`
+4. Build the project using `npm run build`.
+5. Configure Nginx to serve the `client/dist` static files.
 
-### Backend
+### Backend (AWS EC2)
 
-1. Deploy the server using your preferred hosting provider.
-2. Set the root directory to `server`.
-3. Provision a PostgreSQL database and configure the connection variables.
-4. Set all environment variables from `.env.example` in your hosting dashboard.
-5. Set the start command to `node src/index.js`.
-6. Update `FRONTEND_URL` to your Vercel deployment URL.
-7. Update `GOOGLE_REDIRECT_URI` to use your backend URL.
-8. Run `node scripts/seed-admin.js` to seed the admin account.
-9. Deploy.
+1. Navigate to the `server` directory and install dependencies.
+2. Ensure PostgreSQL is installed, and run `node src/db/setup.js` to create the database schema.
+3. Configure the `.env` file with your database credentials (`DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`).
+4. Set the backend port to `PORT=5000` (proxied by Nginx).
+5. Update `FRONTEND_URL=http://3.109.46.106`.
+6. Update `GOOGLE_REDIRECT_URI=http://3.109.46.106/api/calendar/callback`.
+7. Run `node scripts/seed-admin.js` to seed the admin account.
+8. Start the backend using PM2: `pm2 start src/index.js --name "healthcare-api"`.
 
 ---
 
