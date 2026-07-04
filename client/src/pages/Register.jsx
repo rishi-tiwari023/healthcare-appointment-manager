@@ -45,19 +45,19 @@ const Register = () => {
       
       const payload = {
         ...rest,
-        first_name: firstName,
-        last_name: lastName,
-        date_of_birth: dateOfBirth,
-        phone_number: phone,
+        first_name: rest.firstName,
+        last_name: rest.lastName,
+        date_of_birth: rest.dateOfBirth,
+        phone_number: rest.phone,
       };
 
       await authApi.register(payload);
-      
+
       setSuccess(true);
       setTimeout(() => {
         navigate('/login');
       }, 3000);
-      
+
     } catch (err) {
       setApiError(err.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
