@@ -24,7 +24,7 @@ The database uses PostgreSQL and contains 15 core tables to manage users, doctor
 
 ## Deployment & Production Readiness
 
-- **Database:** Deployable on Railway or any managed PostgreSQL instance.
+- **Database:** Deployable on any managed PostgreSQL instance.
 - **Environment:** Configured to dynamically load environment variables natively using the `.env` overrides and securely connect to external resources.
 - **Tests & Quality:** Includes full unit tests and integration tests covering conflict logic, auth middleware, and LLM fallbacks.
 

@@ -12,6 +12,8 @@ import Privacy from './pages/public/Privacy';
 import Terms from './pages/public/Terms';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Unauthorized from './pages/Unauthorized';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import DoctorList from './pages/admin/DoctorList';
@@ -46,6 +48,8 @@ export default function App() {
           <Route element={<GuestRoute />}>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
           </Route>
           <Route path="/unauthorized" element={<Unauthorized />} />
 

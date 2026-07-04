@@ -49,26 +49,28 @@ const DashboardLayout = ({ title, children, roleColor, navigation = [] }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <nav className={`${bgColors[roleColor] || 'bg-gray-600'} text-white shadow-md relative z-20`}>
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans transition-colors duration-300">
+      <nav className={`sticky top-0 z-50 backdrop-blur-md bg-white/70 border-b border-gray-200/50 text-slate-800 shadow-sm transition-all duration-300`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center space-x-8">
-              <div className="flex items-center space-x-2">
-                <Activity size={24} />
-                <span className="text-xl font-semibold tracking-tight hidden sm:block">{title}</span>
+              <div className="flex items-center space-x-3 text-emerald-600 group">
+                <div className="p-2 bg-emerald-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                  <Activity size={24} strokeWidth={2.5} />
+                </div>
+                <span className="text-xl font-bold tracking-tight hidden sm:block text-slate-900">{title}</span>
               </div>
               
               {/* Desktop Navigation Links */}
-              <div className="hidden md:flex space-x-4">
-                <Link to="/" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-white/20 transition">
+              <div className="hidden md:flex space-x-2">
+                <Link to="/" className="px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200">
                   Home
                 </Link>
                 {navigation.map((item) => (
                   <Link
                     key={item.name}
                     to={item.href}
-                    className="px-3 py-2 rounded-md text-sm font-medium hover:bg-white/20 transition"
+                    className="px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200"
                   >
                     {item.name}
                   </Link>
@@ -76,22 +78,22 @@ const DashboardLayout = ({ title, children, roleColor, navigation = [] }) => {
               </div>
             </div>
             
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-6">
               <div className="hidden lg:flex items-center space-x-3">
-                <span className="text-sm text-white/90">Welcome, {user?.first_name}</span>
+                <span className="text-sm font-medium text-slate-600">Welcome, {user?.first_name}</span>
                 <div 
-                  className="relative h-9 w-9 rounded-full bg-white/20 flex items-center justify-center cursor-pointer group overflow-hidden border border-white/30"
+                  className="relative h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center cursor-pointer group overflow-hidden border-2 border-white shadow-sm ring-2 ring-emerald-500/20 hover:ring-emerald-500/50 transition-all duration-300"
                   onClick={handleImageClick}
                 >
                   {isUploading ? (
-                    <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                    <div className="animate-spin h-5 w-5 border-2 border-emerald-500 border-t-transparent rounded-full" />
                   ) : user?.profile_image_url ? (
-                    <img src={user.profile_image_url} alt="Profile" className="h-full w-full object-cover" />
+                    <img src={user.profile_image_url} alt="Profile" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110" />
                   ) : (
-                    <UserIcon size={18} className="text-white/80" />
+                    <UserIcon size={20} className="text-slate-400 group-hover:scale-110 transition-transform duration-300" />
                   )}
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Camera size={14} className="text-white" />
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <Camera size={16} className="text-white" />
                   </div>
                 </div>
                 <input 
@@ -104,7 +106,7 @@ const DashboardLayout = ({ title, children, roleColor, navigation = [] }) => {
               </div>
               <button
                 onClick={handleLogout}
-                className="hidden md:flex items-center space-x-1 text-sm bg-white/20 hover:bg-white/30 text-white px-3 py-2 rounded-md transition"
+                className="hidden md:flex items-center space-x-2 text-sm font-semibold bg-white border border-slate-200 hover:border-red-200 hover:bg-red-50 hover:text-red-600 text-slate-600 px-4 py-2 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md"
               >
                 <LogOut size={16} />
                 <span>Logout</span>
@@ -113,7 +115,7 @@ const DashboardLayout = ({ title, children, roleColor, navigation = [] }) => {
               {/* Mobile menu button */}
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="md:hidden p-2 rounded-md bg-white/10 hover:bg-white/20 transition focus:outline-none"
+                className="md:hidden p-2 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition focus:outline-none"
               >
                 {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
               </button>
@@ -157,7 +159,7 @@ const DashboardLayout = ({ title, children, roleColor, navigation = [] }) => {
         )}
       </nav>
 
-      <main className="flex-1 max-w-7xl w-full mx-auto py-6 px-4 sm:px-6 lg:px-8">
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
         {children}
       </main>
 

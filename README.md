@@ -512,18 +512,18 @@ npm run test
 2. Import the repository in [Vercel](https://vercel.com).
 3. Set the root directory to `client`.
 4. Set the framework preset to **Vite**.
-5. Add the environment variable: `VITE_API_URL=https://your-backend-url.railway.app/api`
+5. Add the environment variable: `VITE_API_URL=https://your-backend-url/api`
 6. Deploy.
 
-### Backend (Railway)
+### Backend
 
-1. Import the repository in [Railway](https://railway.app).
+1. Deploy the server using your preferred hosting provider.
 2. Set the root directory to `server`.
-3. Add a PostgreSQL service from the Railway dashboard.
-4. Set all environment variables from `.env.example` in the Railway dashboard.
+3. Provision a PostgreSQL database and configure the connection variables.
+4. Set all environment variables from `.env.example` in your hosting dashboard.
 5. Set the start command to `node src/index.js`.
 6. Update `FRONTEND_URL` to your Vercel deployment URL.
-7. Update `GOOGLE_REDIRECT_URI` to use the Railway backend URL.
+7. Update `GOOGLE_REDIRECT_URI` to use your backend URL.
 8. Run `node scripts/seed-admin.js` to seed the admin account.
 9. Deploy.
 
